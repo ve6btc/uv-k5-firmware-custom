@@ -56,24 +56,34 @@ static void send_morse(const char *msg, uint8_t wpm)
     else
         BK4819_ExitSubAu();
 
-    for (const char *p = msg; *p; p++) {
+    char displayed[25] = "";
+    uint8_t idx = 0;
+
+    UI_DisplayClear();
+    char freq[16];
+    sprintf(freq, "%3lu.%05lu", gEeprom.FOX.frequency / 100000, gEeprom.FOX.frequency % 100000);
+    UI_PrintStringSmallNormal(freq, 0, 127, 0);
+    if (gEeprom.FOX.ctcss_hz)
+    {
+        char tone[10];
+        sprintf(tone, "%u.%uHz", gEeprom.FOX.ctcss_hz / 10, gEeprom.FOX.ctcss_hz % 10);
+        UI_PrintStringSmallNormal(tone, 0, 127, 1);
+    }
+    ST7565_BlitFullScreen();
+
+    for (const char *p = msg; *p && idx < sizeof(displayed) - 1; p++) {
         if (*p == ' ') {
+            displayed[idx++] = ' ';
+            displayed[idx] = '\0';
+            UI_PrintStringSmallNormal(displayed, 0, 127, 3);
+            ST7565_BlitFullScreen();
             SYSTEM_DelayMs(unit * 7);
             continue;
         }
         const char *code = get_morse(*p);
-        char disp[2] = {*p, 0};
-        UI_DisplayClear();
-        char freq[16];
-        sprintf(freq, "%3lu.%05lu", gEeprom.FOX.frequency / 100000, gEeprom.FOX.frequency % 100000);
-        UI_PrintStringSmallNormal(freq, 0, 127, 0);
-        if (gEeprom.FOX.ctcss_hz)
-        {
-            char tone[10];
-            sprintf(tone, "%u.%uHz", gEeprom.FOX.ctcss_hz / 10, gEeprom.FOX.ctcss_hz % 10);
-            UI_PrintStringSmallNormal(tone, 0, 127, 1);
-        }
-        UI_PrintStringSmallNormal(disp, 0, 127, 3);
+        displayed[idx++] = *p;
+        displayed[idx] = '\0';
+        UI_PrintStringSmallNormal(displayed, 0, 127, 3);
         ST7565_BlitFullScreen();
         for (const char *s = code; *s; s++) {
             if (*s == '-')
