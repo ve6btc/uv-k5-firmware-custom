@@ -241,6 +241,7 @@ and `EXIT` to go back.
 * **FxFreq** – transmit frequency.
 * **FxTone** – optional CTCSS tone (0 = off).
 * **FoxFnd** – send “FOX FOUND” once immediately.
+  Pressing the `F` key while the beacon is active does the same and disables the beacon.
 
 ## License
 

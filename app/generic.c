@@ -34,6 +34,9 @@
 #include "functions.h"
 #include "misc.h"
 #include "settings.h"
+#ifdef ENABLE_FOXHUNT_TX
+#include "app/fox.h"
+#endif
 #include "ui/inputbox.h"
 #include "ui/ui.h"
 
@@ -55,26 +58,38 @@ void GENERIC_Key_F(bool bKeyPressed, bool bKeyHeld)
 
 			COMMON_KeypadLockToggle();
 		}
-		else { // released
+                else { // released
 #ifdef ENABLE_FMRADIO
-			if ((gFmRadioMode || gScreenToDisplay != DISPLAY_MAIN) && gScreenToDisplay != DISPLAY_FM)
-				return;
+                        if ((gFmRadioMode || gScreenToDisplay != DISPLAY_MAIN) && gScreenToDisplay != DISPLAY_FM)
+                                return;
 #else
-			if (gScreenToDisplay != DISPLAY_MAIN)
-				return;
+                        if (gScreenToDisplay != DISPLAY_MAIN)
+                                return;
 #endif
 
-			gWasFKeyPressed = !gWasFKeyPressed; // toggle F function
+#ifdef ENABLE_FOXHUNT_TX
+                        if (gEeprom.FOX.enabled) {
+                                gEeprom.FOX.enabled = false;
+                                gWasFKeyPressed     = false;
+                                FOX_StartFound();
+                                gFoxCountdown_500ms = 0;
+                                gRequestSaveSettings = true;
+                                gUpdateStatus = true;
+                                return;
+                        }
+#endif
 
-			if (gWasFKeyPressed)
-				gKeyInputCountdown = key_input_timeout_500ms;
+                        gWasFKeyPressed = !gWasFKeyPressed; // toggle F function
+
+                        if (gWasFKeyPressed)
+                                gKeyInputCountdown = key_input_timeout_500ms;
 
 #ifdef ENABLE_VOICE
-			if (!gWasFKeyPressed)
-				gAnotherVoiceID = VOICE_ID_CANCEL;
+                        if (!gWasFKeyPressed)
+                                gAnotherVoiceID = VOICE_ID_CANCEL;
 #endif
-			gUpdateStatus = true;
-		}
+                        gUpdateStatus = true;
+                }
 	}
 	else { // short pressed
 #ifdef ENABLE_FMRADIO
