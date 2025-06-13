@@ -144,6 +144,9 @@ const t_menu_item MenuList[] =
         {"IntMax", VOICE_ID_INVALID,                       MENU_FOX_INTMAX    },
         {"RndInt", VOICE_ID_INVALID,                       MENU_FOX_RANDOM    },
         {"FoxMsg", VOICE_ID_INVALID,                       MENU_FOX_MSG       },
+        {"FxPtch", VOICE_ID_INVALID,                       MENU_FOX_PITCH     },
+        {"FxFreq", VOICE_ID_INVALID,                       MENU_FOX_FREQ      },
+        {"FxTone", VOICE_ID_INVALID,                       MENU_FOX_TONE      },
         {"FoxFnd", VOICE_ID_INVALID,                       MENU_FOX_FOUND     },
 #endif
         {"Reset",  VOICE_ID_INITIALISATION,                MENU_RESET         }, // might be better to move this to the hidden menu items ?
@@ -861,6 +864,18 @@ void UI_DisplayMenu(void)
                                 strcpy(String, edit);
                         else
                                 strcpy(String, gEeprom.FOX.message);
+                        break;
+                case MENU_FOX_PITCH:
+                        sprintf(String, "%uHz", gSubMenuSelection);
+                        break;
+                case MENU_FOX_FREQ:
+                        sprintf(String, "%3u.%05u", gSubMenuSelection / 100000, gSubMenuSelection % 100000);
+                        break;
+                case MENU_FOX_TONE:
+                        if (gSubMenuSelection == 0)
+                                strcpy(String, "OFF");
+                        else
+                                sprintf(String, "%u.%uHz", gSubMenuSelection / 10, gSubMenuSelection % 10);
                         break;
                 case MENU_FOX_FOUND:
                         strcpy(String, "PLAY");

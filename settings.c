@@ -284,9 +284,12 @@ void SETTINGS_InitEEPROM(void)
                         uint8_t  enabled;
                         uint8_t  random;
                         uint8_t  wpm;
-                        uint8_t  reserved;
+                        uint8_t  power;
                         uint16_t interval_min;
                         uint16_t interval_max;
+                        uint32_t frequency;
+                        uint16_t pitch_hz;
+                        uint16_t ctcss_hz;
                         char     message[24];
                 } __attribute__((packed)) foxCfg;
                 EEPROM_ReadBuffer(0x1FD0, &foxCfg, sizeof(foxCfg));
@@ -294,7 +297,11 @@ void SETTINGS_InitEEPROM(void)
                 if (gEeprom.FOX.wpm == 0) gEeprom.FOX.wpm = 10;
                 if (gEeprom.FOX.interval_min == 0) gEeprom.FOX.interval_min = 60;
                 if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min) gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
+                if (gEeprom.FOX.frequency == 0) gEeprom.FOX.frequency = SETTINGS_FetchChannelFrequency(0);
+                if (gEeprom.FOX.power > 2) gEeprom.FOX.power = 1;
                 if (gEeprom.FOX.message[0] == '\0') strcpy(gEeprom.FOX.message, "FOX");
+                if (gEeprom.FOX.pitch_hz == 0) gEeprom.FOX.pitch_hz = 800;
+                if (gEeprom.FOX.ctcss_hz > 2541) gEeprom.FOX.ctcss_hz = 0;
         }
 #endif
 }
@@ -619,9 +626,12 @@ void SETTINGS_SaveSettings(void)
                         uint8_t  enabled;
                         uint8_t  random;
                         uint8_t  wpm;
-                        uint8_t  reserved;
+                        uint8_t  power;
                         uint16_t interval_min;
                         uint16_t interval_max;
+                        uint32_t frequency;
+                        uint16_t pitch_hz;
+                        uint16_t ctcss_hz;
                         char     message[24];
                 } __attribute__((packed)) foxCfg;
                 memcpy(&foxCfg, &gEeprom.FOX, sizeof(foxCfg));
