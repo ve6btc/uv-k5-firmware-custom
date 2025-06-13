@@ -218,7 +218,29 @@ Many thanks to various people on Telegram for putting up with me during this eff
 
 ## Fox hunt transmitter
 
-Enable `ENABLE_FOXHUNT_TX` in the Makefile to build a small CW beacon. New menu entries allow enabling the beacon, adjusting WPM and interval, setting CW pitch, transmit frequency and optional CTCSS tone, and editing the transmitted text. Selecting `FoxFnd` sends "FOX FOUND" once.
+Set `ENABLE_FOXHUNT_TX` to `1` in the **Makefile** and rebuild to include a small CW
+beacon in the firmware.
+
+### Accessing the menu
+
+The beacon options now appear in the regular menu near the bottom.  Navigate
+with the `UP`/`DOWN` keys, press `MENU` to edit a value and press `EXIT` to
+cancel.
+
+### Menu items and keys
+
+* **FoxTx** – enable/disable the beacon.
+* **FoxWPM** – CW speed in words per minute (5–40).
+* **IntMin** – minimum interval between transmissions (seconds).
+* **IntMax** – maximum interval used when randomising.
+* **RndInt** – toggle random intervals between `IntMin` and `IntMax`.
+* **FoxMsg** – text to transmit. After selecting this item press `MENU` and use
+  `UP`/`DOWN` to change characters, number keys to insert digits, `*` for a
+  hyphen and `F` for a space.  Press `MENU` again when done.
+* **FxPtch** – CW pitch in hertz (300–1500).
+* **FxFreq** – transmit frequency.
+* **FxTone** – optional CTCSS tone (0 = off).
+* **FoxFnd** – send “FOX FOUND” once immediately.
 
 ## License
 
