@@ -266,17 +266,37 @@ void SETTINGS_InitEEPROM(void)
 		}
 	}
 
-	// 0F30..0F3F
-	EEPROM_ReadBuffer(0x0F30, gCustomAesKey, sizeof(gCustomAesKey));
-	bHasCustomAesKey = false;
-	for (unsigned int i = 0; i < ARRAY_SIZE(gCustomAesKey); i++)
-	{
-		if (gCustomAesKey[i] != 0xFFFFFFFFu)
-		{
-			bHasCustomAesKey = true;
-			return;
-		}
-	}
+        // 0F30..0F3F
+        EEPROM_ReadBuffer(0x0F30, gCustomAesKey, sizeof(gCustomAesKey));
+        bHasCustomAesKey = false;
+        for (unsigned int i = 0; i < ARRAY_SIZE(gCustomAesKey); i++)
+        {
+                if (gCustomAesKey[i] != 0xFFFFFFFFu)
+                {
+                        bHasCustomAesKey = true;
+                        break;
+                }
+        }
+
+#ifdef ENABLE_FOXHUNT_TX
+        {
+                struct {
+                        uint8_t  enabled;
+                        uint8_t  random;
+                        uint8_t  wpm;
+                        uint8_t  reserved;
+                        uint16_t interval_min;
+                        uint16_t interval_max;
+                        char     message[24];
+                } __attribute__((packed)) foxCfg;
+                EEPROM_ReadBuffer(0x1FD0, &foxCfg, sizeof(foxCfg));
+                memcpy(&gEeprom.FOX, &foxCfg, sizeof(foxCfg));
+                if (gEeprom.FOX.wpm == 0) gEeprom.FOX.wpm = 10;
+                if (gEeprom.FOX.interval_min == 0) gEeprom.FOX.interval_min = 60;
+                if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min) gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
+                if (gEeprom.FOX.message[0] == '\0') strcpy(gEeprom.FOX.message, "FOX");
+        }
+#endif
 }
 
 void SETTINGS_LoadCalibration(void)
@@ -589,9 +609,25 @@ void SETTINGS_SaveSettings(void)
 	#ifdef ENABLE_AM_FIX
 		if (!gSetting_AM_fix)            State[7] &= ~(1u << 5);
 	#endif
-	State[7] = (State[7] & ~(3u << 6)) | ((gSetting_backlight_on_tx_rx & 3u) << 6);
+        State[7] = (State[7] & ~(3u << 6)) | ((gSetting_backlight_on_tx_rx & 3u) << 6);
 
-	EEPROM_WriteBuffer(0x0F40, State);
+        EEPROM_WriteBuffer(0x0F40, State);
+
+#ifdef ENABLE_FOXHUNT_TX
+        {
+                struct {
+                        uint8_t  enabled;
+                        uint8_t  random;
+                        uint8_t  wpm;
+                        uint8_t  reserved;
+                        uint16_t interval_min;
+                        uint16_t interval_max;
+                        char     message[24];
+                } __attribute__((packed)) foxCfg;
+                memcpy(&foxCfg, &gEeprom.FOX, sizeof(foxCfg));
+                EEPROM_WriteBuffer(0x1FD0, &foxCfg);
+        }
+#endif
 }
 
 void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode)

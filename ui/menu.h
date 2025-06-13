@@ -122,8 +122,17 @@ enum
 	MENU_F1LONG,
 	MENU_F2SHRT,
 	MENU_F2LONG,
-	MENU_MLONG,
-	MENU_BATTYP
+        MENU_MLONG,
+        MENU_BATTYP
+#ifdef ENABLE_FOXHUNT_TX
+        ,MENU_FOX_EN
+        ,MENU_FOX_WPM
+        ,MENU_FOX_INTMIN
+        ,MENU_FOX_INTMAX
+        ,MENU_FOX_RANDOM
+        ,MENU_FOX_MSG
+        ,MENU_FOX_FOUND
+#endif
 };
 
 extern const uint8_t FIRST_HIDDEN_MENU_ITEM;
