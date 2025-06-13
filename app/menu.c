@@ -386,6 +386,11 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
                         *pMin = 0;
                         *pMax = 2541;
                         break;
+                case MENU_FOX_TX_LEAD:
+                case MENU_FOX_TX_TAIL:
+                        *pMin = 0;
+                        *pMax = 60;
+                        break;
 #endif
 
 		case MENU_F1SHRT:
@@ -843,6 +848,12 @@ void MENU_AcceptSetting(void)
                 case MENU_FOX_TONE:
                         gEeprom.FOX.ctcss_hz = gSubMenuSelection;
                         break;
+                case MENU_FOX_TX_LEAD:
+                        gEeprom.FOX.tx_lead_time = gSubMenuSelection;
+                        break;
+                case MENU_FOX_TX_TAIL:
+                        gEeprom.FOX.tx_tail_time = gSubMenuSelection;
+                        break;
                 case MENU_FOX_FOUND:
                         FOX_StartFound();
                         break;
@@ -1230,6 +1241,12 @@ void MENU_ShowCurrentSetting(void)
                         break;
                 case MENU_FOX_TONE:
                         gSubMenuSelection = gEeprom.FOX.ctcss_hz;
+                        break;
+                case MENU_FOX_TX_LEAD:
+                        gSubMenuSelection = gEeprom.FOX.tx_lead_time;
+                        break;
+                case MENU_FOX_TX_TAIL:
+                        gSubMenuSelection = gEeprom.FOX.tx_tail_time;
                         break;
 #endif
 

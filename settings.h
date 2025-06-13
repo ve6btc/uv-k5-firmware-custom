@@ -263,6 +263,8 @@ typedef struct {
                 uint32_t frequency;
                 uint16_t pitch_hz;
                 uint16_t ctcss_hz;
+                uint16_t tx_lead_time;
+                uint16_t tx_tail_time;
                 char     message[24];
         } FOX;
 #endif

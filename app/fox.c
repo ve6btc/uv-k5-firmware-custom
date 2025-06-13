@@ -78,6 +78,9 @@ static void send_morse(const char *msg, uint8_t wpm)
     }
     ST7565_BlitFullScreen();
 
+    if (gEeprom.FOX.tx_lead_time)
+        SYSTEM_DelayMs((uint32_t)gEeprom.FOX.tx_lead_time * 1000);
+
     bool aborted = false;
     for (const char *p = msg; *p && idx < sizeof(displayed) - 1 && !aborted; p++) {
         if (check_exit_request()) {
@@ -113,6 +116,9 @@ static void send_morse(const char *msg, uint8_t wpm)
         }
         SYSTEM_DelayMs(unit * 3);
     }
+
+    if (gEeprom.FOX.tx_tail_time)
+        SYSTEM_DelayMs((uint32_t)gEeprom.FOX.tx_tail_time * 1000);
 
     APP_EndTransmission();
     FUNCTION_Select(FUNCTION_FOREGROUND);

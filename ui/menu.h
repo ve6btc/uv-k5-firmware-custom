@@ -135,6 +135,8 @@ enum
         ,MENU_FOX_PITCH
         ,MENU_FOX_FREQ
         ,MENU_FOX_TONE
+        ,MENU_FOX_TX_LEAD
+        ,MENU_FOX_TX_TAIL
         ,MENU_FOX_FOUND
 #endif
 };
