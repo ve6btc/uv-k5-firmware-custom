@@ -120,6 +120,7 @@ You'll find the options at the top of "Makefile" ('0' = disable, '1' = enable) .
 | ENABLE_BYP_RAW_DEMODULATORS | additional BYP (bypass?) and RAW demodulation options, proved not to be very useful, but it is there if you want to experiment |
 | ENABLE_BLMIN_TMP_OFF | additional function for configurable buttons that toggles `BLMin` on and off wihout saving it to the EEPROM |
 | ENABLE_SCAN_RANGES | scan range mode for frequency scanning, see wiki for instructions (radio operation -> frequency scanning) |
+| ENABLE_FOXHUNT_TX | enable the built in fox-hunt CW beacon |
 |🧰 **DEBUGGING** ||
 | ENABLE_AM_FIX_SHOW_DATA| displays settings used by  AM-fix when AM transmission is received |
 | ENABLE_AGC_SHOW_DATA | displays AGC settings |
@@ -214,6 +215,10 @@ Many thanks to various people on Telegram for putting up with me during this eff
 
 [ludwich66 - Quansheng UV-K5 Wiki](https://github.com/ludwich66/Quansheng_UV-K5_Wiki/wiki)<br>
 [amnemonic - tools and sources of information](https://github.com/amnemonic/Quansheng_UV-K5_Firmware)
+
+## Fox hunt transmitter
+
+Enable `ENABLE_FOXHUNT_TX` in the Makefile to build a small CW beacon. New menu entries allow enabling the beacon, adjusting WPM and interval and editing the transmitted text. Selecting `FoxFnd` sends "FOX FOUND" once.
 
 ## License
 

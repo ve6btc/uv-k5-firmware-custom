@@ -204,6 +204,10 @@ extern volatile bool         gNextTimeslice_500ms;
 
 extern volatile uint16_t     gTxTimerCountdown_500ms;
 extern volatile bool         gTxTimeoutReached;
+#ifdef ENABLE_FOXHUNT_TX
+extern volatile uint16_t     gFoxCountdown_500ms;
+extern bool                  gFoxFoundMode;
+#endif
 
 extern volatile uint16_t     gTailToneEliminationCountdown_10ms;
 

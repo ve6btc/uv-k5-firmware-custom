@@ -250,7 +250,18 @@ typedef struct {
 	BATTERY_Type_t		  BATTERY_TYPE;
 #ifdef ENABLE_RSSI_BAR
 	uint8_t               S0_LEVEL;
-	uint8_t               S9_LEVEL;
+        uint8_t               S9_LEVEL;
+#endif
+#ifdef ENABLE_FOXHUNT_TX
+        struct {
+                uint8_t  enabled;
+                uint8_t  random;
+                uint8_t  wpm;
+                uint8_t  reserved;
+                uint16_t interval_min;
+                uint16_t interval_max;
+                char     message[24];
+        } FOX;
 #endif
 } EEPROM_Config_t;
 

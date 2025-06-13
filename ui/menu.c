@@ -136,8 +136,17 @@ const t_menu_item MenuList[] =
 	{"FrCali", VOICE_ID_INVALID,                       MENU_F_CALI        }, // reference xtal calibration
 #endif
 	{"BatCal", VOICE_ID_INVALID,                       MENU_BATCAL        }, // battery voltage calibration
-	{"BatTyp", VOICE_ID_INVALID,                       MENU_BATTYP        }, // battery type 1600/2200mAh
-	{"Reset",  VOICE_ID_INITIALISATION,                MENU_RESET         }, // might be better to move this to the hidden menu items ?
+        {"BatTyp", VOICE_ID_INVALID,                       MENU_BATTYP        }, // battery type 1600/2200mAh
+#ifdef ENABLE_FOXHUNT_TX
+        {"FoxTx",  VOICE_ID_INVALID,                       MENU_FOX_EN        },
+        {"FoxWPM", VOICE_ID_INVALID,                       MENU_FOX_WPM       },
+        {"IntMin", VOICE_ID_INVALID,                       MENU_FOX_INTMIN    },
+        {"IntMax", VOICE_ID_INVALID,                       MENU_FOX_INTMAX    },
+        {"RndInt", VOICE_ID_INVALID,                       MENU_FOX_RANDOM    },
+        {"FoxMsg", VOICE_ID_INVALID,                       MENU_FOX_MSG       },
+        {"FoxFnd", VOICE_ID_INVALID,                       MENU_FOX_FOUND     },
+#endif
+        {"Reset",  VOICE_ID_INITIALISATION,                MENU_RESET         }, // might be better to move this to the hidden menu items ?
 
 	{"",       VOICE_ID_INVALID,                       0xff               }  // end of list - DO NOT delete or move this this
 };
@@ -830,13 +839,37 @@ void UI_DisplayMenu(void)
 			break;
 		}
 
-		case MENU_BATTYP:
-			strcpy(String, gSubMenu_BATTYP[gSubMenuSelection]);
-			break;
+                case MENU_BATTYP:
+                        strcpy(String, gSubMenu_BATTYP[gSubMenuSelection]);
+                        break;
+#ifdef ENABLE_FOXHUNT_TX
+                case MENU_FOX_EN:
+                        strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+                        break;
+                case MENU_FOX_RANDOM:
+                        strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+                        break;
+                case MENU_FOX_WPM:
+                        sprintf(String, "%u WPM", gSubMenuSelection);
+                        break;
+                case MENU_FOX_INTMIN:
+                case MENU_FOX_INTMAX:
+                        sprintf(String, "%us", gSubMenuSelection);
+                        break;
+                case MENU_FOX_MSG:
+                        if(edit_index >= 0)
+                                strcpy(String, edit);
+                        else
+                                strcpy(String, gEeprom.FOX.message);
+                        break;
+                case MENU_FOX_FOUND:
+                        strcpy(String, "PLAY");
+                        break;
+#endif
 
-		case MENU_F1SHRT:
-		case MENU_F1LONG:
-		case MENU_F2SHRT:
+                case MENU_F1SHRT:
+                case MENU_F1LONG:
+                case MENU_F2SHRT:
 		case MENU_F2LONG:
 		case MENU_MLONG:
 			strcpy(String, gSubMenu_SIDEFUNCTIONS[gSubMenuSelection].name);

@@ -61,6 +61,9 @@
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
+#ifdef ENABLE_FOXHUNT_TX
+#include "app/fox.h"
+#endif
 
 #if defined(ENABLE_OVERLAY)
 	#include "sram-overlay.h"
@@ -1453,7 +1456,10 @@ void APP_TimeSlice500ms(void)
 
 	BATTERY_TimeSlice500ms();
 	SCANNER_TimeSlice500ms();
-	UI_MAIN_TimeSlice500ms();
+        UI_MAIN_TimeSlice500ms();
+#ifdef ENABLE_FOXHUNT_TX
+        FOX_TimeSlice500ms();
+#endif
 
 #ifdef ENABLE_DTMF_CALLING
 	if (gCurrentFunction != FUNCTION_TRANSMIT) {

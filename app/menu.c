@@ -349,10 +349,31 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 			*pMax = 2200;
 			break;
 
-		case MENU_BATTYP:
-			*pMin = 0;
-			*pMax = 1;
-			break;
+                case MENU_BATTYP:
+                        *pMin = 0;
+                        *pMax = 1;
+                        break;
+
+#ifdef ENABLE_FOXHUNT_TX
+                case MENU_FOX_EN:
+                case MENU_FOX_RANDOM:
+                        *pMin = 0;
+                        *pMax = 1;
+                        break;
+                case MENU_FOX_WPM:
+                        *pMin = 5;
+                        *pMax = 40;
+                        break;
+                case MENU_FOX_INTMIN:
+                case MENU_FOX_INTMAX:
+                        *pMin = 1;
+                        *pMax = 600;
+                        break;
+                case MENU_FOX_MSG:
+                        *pMin = 0;
+                        *pMax = 0;
+                        break;
+#endif
 
 		case MENU_F1SHRT:
 		case MENU_F1LONG:
@@ -777,9 +798,33 @@ void MENU_AcceptSetting(void)
 			return;
 		}
 
-		case MENU_BATTYP:
-			gEeprom.BATTERY_TYPE = gSubMenuSelection;
-			break;
+                case MENU_BATTYP:
+                        gEeprom.BATTERY_TYPE = gSubMenuSelection;
+                        break;
+#ifdef ENABLE_FOXHUNT_TX
+                case MENU_FOX_EN:
+                        gEeprom.FOX.enabled = gSubMenuSelection;
+                        break;
+                case MENU_FOX_WPM:
+                        gEeprom.FOX.wpm = gSubMenuSelection;
+                        break;
+                case MENU_FOX_INTMIN:
+                        gEeprom.FOX.interval_min = gSubMenuSelection;
+                        break;
+                case MENU_FOX_INTMAX:
+                        gEeprom.FOX.interval_max = gSubMenuSelection;
+                        break;
+                case MENU_FOX_RANDOM:
+                        gEeprom.FOX.random = gSubMenuSelection;
+                        break;
+                case MENU_FOX_MSG:
+                        strncpy(gEeprom.FOX.message, edit, sizeof(gEeprom.FOX.message)-1);
+                        gEeprom.FOX.message[sizeof(gEeprom.FOX.message)-1] = 0;
+                        break;
+                case MENU_FOX_FOUND:
+                        FOX_StartFound();
+                        break;
+#endif
 
 		case MENU_F1SHRT:
 		case MENU_F1LONG:
@@ -1131,9 +1176,31 @@ void MENU_ShowCurrentSetting(void)
 			gSubMenuSelection = gBatteryCalibration[3];
 			break;
 
-		case MENU_BATTYP:
-			gSubMenuSelection = gEeprom.BATTERY_TYPE;
-			break;
+                case MENU_BATTYP:
+                        gSubMenuSelection = gEeprom.BATTERY_TYPE;
+                        break;
+#ifdef ENABLE_FOXHUNT_TX
+                case MENU_FOX_EN:
+                        gSubMenuSelection = gEeprom.FOX.enabled;
+                        break;
+                case MENU_FOX_WPM:
+                        gSubMenuSelection = gEeprom.FOX.wpm;
+                        break;
+                case MENU_FOX_INTMIN:
+                        gSubMenuSelection = gEeprom.FOX.interval_min;
+                        break;
+                case MENU_FOX_INTMAX:
+                        gSubMenuSelection = gEeprom.FOX.interval_max;
+                        break;
+                case MENU_FOX_RANDOM:
+                        gSubMenuSelection = gEeprom.FOX.random;
+                        break;
+                case MENU_FOX_MSG:
+                        strncpy(edit, gEeprom.FOX.message, sizeof(edit)-1);
+                        edit[sizeof(edit)-1] = 0;
+                        edit_index = -1;
+                        break;
+#endif
 
 		case MENU_F1SHRT:
 		case MENU_F1LONG:
@@ -1175,7 +1242,7 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 	gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
+        if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && edit_index >= 0)
 	{	// currently editing the channel name
 
 		if (edit_index < 10)
@@ -1400,9 +1467,9 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 			)
             return;
 		#if 1
-			if (UI_MENU_GetCurrentMenuId() == MENU_DEL_CH || UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
-				if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
-					return;  // invalid channel
+            if (UI_MENU_GetCurrentMenuId() == MENU_DEL_CH || UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
+                                if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
+                                        return;  // invalid channel
 		#endif
 
 		gAskForConfirmation = 0;
@@ -1417,14 +1484,20 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 		return;
 	}
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
+        if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG)
 	{
 		if (edit_index < 0)
 		{	// enter channel name edit mode
-			if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
-				return;
+			if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
+                        {
+                                if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
+                                        return;
 
-			SETTINGS_FetchChannelName(edit, gSubMenuSelection);
+                                SETTINGS_FetchChannelName(edit, gSubMenuSelection);
+                        } else {
+                                strncpy(edit, gEeprom.FOX.message, sizeof(edit)-1);
+                                edit[sizeof(edit)-1] = 0;
+                        }
 
 			// pad the channel name out with '_'
 			edit_index = strlen(edit);
@@ -1522,7 +1595,7 @@ static void MENU_Key_STAR(const bool bKeyPressed, const bool bKeyHeld)
 
 	gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
+        if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && edit_index >= 0)
 	{	// currently editing the channel name
 
 		if (edit_index < 10)
@@ -1570,7 +1643,7 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 	uint8_t Channel;
 	bool    bCheckScanList;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && gIsInSubMenu && edit_index >= 0)
+        if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && gIsInSubMenu && edit_index >= 0)
 	{	// change the character
 		if (bKeyPressed && edit_index < 10 && Direction != 0)
 		{
@@ -1690,8 +1763,8 @@ void MENU_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		case KEY_STAR:
 			MENU_Key_STAR(bKeyPressed, bKeyHeld);
 			break;
-		case KEY_F:
-			if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
+                case KEY_F:
+                        if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && edit_index >= 0)
 			{	// currently editing the channel name
 				if (!bKeyHeld && bKeyPressed)
 				{

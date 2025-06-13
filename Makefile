@@ -40,6 +40,7 @@ ENABLE_REDUCE_LOW_MID_TX_POWER?= 0
 ENABLE_BYP_RAW_DEMODULATORS   ?= 0
 ENABLE_BLMIN_TMP_OFF          ?= 0
 ENABLE_SCAN_RANGES            ?= 1
+ENABLE_FOXHUNT_TX             ?= 1
 
 # ---- DEBUGGING ----
 ENABLE_AM_FIX_SHOW_DATA       ?= 0
@@ -117,10 +118,13 @@ OBJS += app/chFrScanner.o
 OBJS += app/common.o
 OBJS += app/dtmf.o
 ifeq ($(ENABLE_FLASHLIGHT),1)
-	OBJS += app/flashlight.o
+        OBJS += app/flashlight.o
 endif
 ifeq ($(ENABLE_FMRADIO),1)
-	OBJS += app/fm.o
+        OBJS += app/fm.o
+endif
+ifeq ($(ENABLE_FOXHUNT_TX),1)
+        OBJS += app/fox.o
 endif
 OBJS += app/generic.o
 OBJS += app/main.o
@@ -360,10 +364,13 @@ ifeq ($(ENABLE_BLMIN_TMP_OFF),1)
 	CFLAGS  += -DENABLE_BLMIN_TMP_OFF
 endif
 ifeq ($(ENABLE_SCAN_RANGES),1)
-	CFLAGS  += -DENABLE_SCAN_RANGES
+        CFLAGS  += -DENABLE_SCAN_RANGES
+endif
+ifeq ($(ENABLE_FOXHUNT_TX),1)
+        CFLAGS  += -DENABLE_FOXHUNT_TX
 endif
 ifeq ($(ENABLE_DTMF_CALLING),1)
-	CFLAGS  += -DENABLE_DTMF_CALLING
+        CFLAGS  += -DENABLE_DTMF_CALLING
 endif
 ifeq ($(ENABLE_AGC_SHOW_DATA),1)
 	CFLAGS  += -DENABLE_AGC_SHOW_DATA
