@@ -172,6 +172,7 @@ OBJS += ui/ui.o
 OBJS += ui/welcome.o
 OBJS += version.o
 OBJS += main.o
+OBJS += syscalls.o
 
 ifeq ($(OS), Windows_NT) # windows
     TOP := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
