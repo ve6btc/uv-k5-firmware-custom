@@ -125,6 +125,7 @@ enum
         MENU_MLONG,
         MENU_BATTYP
 #ifdef ENABLE_FOXHUNT_TX
+        ,MENU_FOX_MENU
         ,MENU_FOX_EN
         ,MENU_FOX_WPM
         ,MENU_FOX_INTMIN

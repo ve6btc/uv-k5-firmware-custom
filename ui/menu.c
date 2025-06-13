@@ -124,6 +124,7 @@ const t_menu_item MenuList[] =
 	{"RxMode", VOICE_ID_DUAL_STANDBY,                  MENU_TDR           },
         {"Sql",    VOICE_ID_SQUELCH,                       MENU_SQL           },
 #ifdef ENABLE_FOXHUNT_TX
+        {"FoxHnt", VOICE_ID_INVALID,                       MENU_FOX_MENU      },
         {"FoxTx",  VOICE_ID_INVALID,                       MENU_FOX_EN        },
         {"FoxWPM", VOICE_ID_INVALID,                       MENU_FOX_WPM       },
         {"IntMin", VOICE_ID_INVALID,                       MENU_FOX_INTMIN    },

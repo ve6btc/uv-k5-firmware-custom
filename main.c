@@ -126,13 +126,19 @@ void Main(void)
 	}
 
 	// count the number of menu items
-	gMenuListCount = 0;
-	while (MenuList[gMenuListCount].name[0] != '\0') {
-		if(!gF_LOCK && MenuList[gMenuListCount].menu_id == FIRST_HIDDEN_MENU_ITEM)
-			break;
+        gMenuListCount = 0;
+        while (MenuList[gMenuListCount].name[0] != '\0') {
+                if(!gF_LOCK && MenuList[gMenuListCount].menu_id == FIRST_HIDDEN_MENU_ITEM)
+                        break;
 
-		gMenuListCount++;
-	}
+                gMenuListCount++;
+        }
+
+#ifdef ENABLE_FOXHUNT_TX
+        gFoxMenuRootIndex  = UI_MENU_GetMenuIdx(MENU_FOX_MENU);
+        gFoxMenuFirstIndex = UI_MENU_GetMenuIdx(MENU_FOX_EN);
+        gFoxMenuLastIndex  = UI_MENU_GetMenuIdx(MENU_FOX_FOUND);
+#endif
 
 	// wait for user to release all butts before moving on
 	if (!GPIO_CheckBit(&GPIOC->DATA, GPIOC_PIN_PTT) ||

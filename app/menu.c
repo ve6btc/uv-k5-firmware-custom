@@ -1306,11 +1306,15 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 				Value = (gInputBox[0] * 10) + gInputBox[1];
 
-				if (Value > 0 && Value <= gMenuListCount) {
-					gMenuCursor         = Value - 1;
-					gFlagRefreshSetting = true;
-					return;
-				}
+                                if (Value > 0 && Value <= gMenuListCount) {
+                                        gMenuCursor = Value - 1;
+#ifdef ENABLE_FOXHUNT_TX
+                                        if (!gInFoxMenu && gMenuCursor >= gFoxMenuFirstIndex && gMenuCursor <= gFoxMenuLastIndex)
+                                                break;
+#endif
+                                        gFlagRefreshSetting = true;
+                                        return;
+                                }
 
 				if (Value <= gMenuListCount)
 					break;
@@ -1320,11 +1324,15 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 				[[fallthrough]];
 			case 1:
 				Value = gInputBox[0];
-				if (Value > 0 && Value <= gMenuListCount) {
-					gMenuCursor         = Value - 1;
-					gFlagRefreshSetting = true;
-					return;
-				}
+                                if (Value > 0 && Value <= gMenuListCount) {
+                                        gMenuCursor = Value - 1;
+#ifdef ENABLE_FOXHUNT_TX
+                                        if (!gInFoxMenu && gMenuCursor >= gFoxMenuFirstIndex && gMenuCursor <= gFoxMenuLastIndex)
+                                                break;
+#endif
+                                        gFlagRefreshSetting = true;
+                                        return;
+                                }
 				break;
 		}
 
@@ -1429,8 +1437,8 @@ static void MENU_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 		   just in case we are exiting from one of them. */
 		BACKLIGHT_TurnOn();
 
-		if (gIsInSubMenu)
-		{
+                if (gIsInSubMenu)
+                {
 			if (gInputBoxIndex == 0 || UI_MENU_GetCurrentMenuId() != MENU_OFFSET)
 			{
 				gAskForConfirmation = 0;
@@ -1484,8 +1492,33 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 	gBeepToPlay           = BEEP_1KHZ_60MS_OPTIONAL;
 	gRequestDisplayScreen = DISPLAY_MENU;
 
-	if (!gIsInSubMenu)
-	{
+        if (!gIsInSubMenu)
+        {
+#ifdef ENABLE_FOXHUNT_TX
+                if (UI_MENU_GetCurrentMenuId() == MENU_FOX_MENU && !gInFoxMenu) {
+                        gInFoxMenu = true;
+                        gMenuCursor = gFoxMenuFirstIndex;
+                        gFlagRefreshSetting = true;
+                        return;
+                } else if (gInFoxMenu) {
+                        gInFoxMenu = false;
+                        gMenuCursor = gFoxMenuRootIndex;
+                        gFlagRefreshSetting = true;
+                        gRequestDisplayScreen = DISPLAY_MENU;
+                        return;
+                }
+
+#ifdef ENABLE_FOXHUNT_TX
+                if (gInFoxMenu)
+                {
+                        gInFoxMenu = false;
+                        gMenuCursor = gFoxMenuRootIndex;
+                        gFlagRefreshSetting = true;
+                        gRequestDisplayScreen = DISPLAY_MENU;
+                        return;
+                }
+#endif
+#endif
 		#ifdef ENABLE_VOICE
 			if (UI_MENU_GetCurrentMenuId() != MENU_SCR)
 				gAnotherVoiceID = MenuList[gMenuCursor].voice_id;

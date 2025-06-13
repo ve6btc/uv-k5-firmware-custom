@@ -223,11 +223,11 @@ beacon in the firmware.
 
 ### Accessing the menu
 
-The beacon options now appear in the regular menu near the bottom.  Navigate
-with the `UP`/`DOWN` keys, press `MENU` to edit a value and press `EXIT` to
-cancel.
+Select **FoxHnt** in the main menu and press `MENU` to enter the beacon
+configuration sub menu. Navigate with `UP`/`DOWN`, press `MENU` to edit a value
+and `EXIT` to go back.
 
-### Menu items and keys
+### FoxHnt sub menu items
 
 * **FoxTx** – enable/disable the beacon.
 * **FoxWPM** – CW speed in words per minute (5–40).

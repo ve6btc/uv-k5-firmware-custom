@@ -215,6 +215,12 @@ bool              gKeyBeingHeld;
 bool              gPttIsPressed;
 uint8_t           gPttDebounceCounter;
 uint8_t           gMenuListCount;
+#ifdef ENABLE_FOXHUNT_TX
+bool              gInFoxMenu = false;
+uint8_t           gFoxMenuRootIndex = 0;
+uint8_t           gFoxMenuFirstIndex = 0;
+uint8_t           gFoxMenuLastIndex = 0;
+#endif
 uint8_t           gBackup_CROSS_BAND_RX_TX;
 uint8_t           gScanDelay_10ms;
 uint8_t           gFSKWriteIndex;
