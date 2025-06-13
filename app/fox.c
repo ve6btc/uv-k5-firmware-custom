@@ -15,6 +15,7 @@
 #include "radio.h"
 #include "ui/helper.h"
 #include "driver/st7565.h"
+#include "driver/keyboard.h"
 
 
 static const char *morse_table[36] = {
@@ -39,6 +40,12 @@ static void play_unit(uint16_t ms, uint16_t pitch)
     SYSTEM_DelayMs(ms);
     BK4819_EnterTxMute();
     SYSTEM_DelayMs(ms);
+}
+
+static bool check_exit_request(void)
+{
+    KEY_Code_t key = KEYBOARD_Poll();
+    return key == KEY_EXIT;
 }
 
 static void send_morse(const char *msg, uint8_t wpm)
@@ -71,7 +78,14 @@ static void send_morse(const char *msg, uint8_t wpm)
     }
     ST7565_BlitFullScreen();
 
-    for (const char *p = msg; *p && idx < sizeof(displayed) - 1; p++) {
+    bool aborted = false;
+    for (const char *p = msg; *p && idx < sizeof(displayed) - 1 && !aborted; p++) {
+        if (check_exit_request()) {
+            gEeprom.FOX.enabled = false;
+            gFoxCountdown_500ms = 0;
+            aborted = true;
+            break;
+        }
         if (*p == ' ') {
             displayed[idx++] = ' ';
             displayed[idx] = '\0';
@@ -85,7 +99,13 @@ static void send_morse(const char *msg, uint8_t wpm)
         displayed[idx] = '\0';
         UI_PrintStringSmallNormal(displayed, 0, 127, 3);
         ST7565_BlitFullScreen();
-        for (const char *s = code; *s; s++) {
+        for (const char *s = code; *s && !aborted; s++) {
+            if (check_exit_request()) {
+                gEeprom.FOX.enabled = false;
+                gFoxCountdown_500ms = 0;
+                aborted = true;
+                break;
+            }
             if (*s == '-')
                 play_unit(unit * 3, gEeprom.FOX.pitch_hz);
             else
