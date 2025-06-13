@@ -295,6 +295,12 @@ extern bool                  gKeyBeingHeld;
 extern bool                  gPttIsPressed;
 extern uint8_t               gPttDebounceCounter;
 extern uint8_t               gMenuListCount;
+#ifdef ENABLE_FOXHUNT_TX
+extern bool                  gInFoxMenu;
+extern uint8_t               gFoxMenuRootIndex;
+extern uint8_t               gFoxMenuFirstIndex;
+extern uint8_t               gFoxMenuLastIndex;
+#endif
 extern uint8_t               gBackup_CROSS_BAND_RX_TX;
 extern uint8_t               gScanDelay_10ms;
 extern uint8_t               gFSKWriteIndex;
