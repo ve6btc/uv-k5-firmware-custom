@@ -257,9 +257,12 @@ typedef struct {
                 uint8_t  enabled;
                 uint8_t  random;
                 uint8_t  wpm;
-                uint8_t  reserved;
+                uint8_t  power;
                 uint16_t interval_min;
                 uint16_t interval_max;
+                uint32_t frequency;
+                uint16_t pitch_hz;
+                uint16_t ctcss_hz;
                 char     message[24];
         } FOX;
 #endif

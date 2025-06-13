@@ -4,14 +4,18 @@
 #include <string.h>
 
 #include "app/fox.h"
+#include <stdio.h>
 #include "functions.h"
 #include "settings.h"
 #include "misc.h"
 #include "driver/bk4819.h"
 #include "audio.h"
+#include "driver/system.h"
+#include "app/app.h"
+#include "radio.h"
+#include "ui/helper.h"
+#include "driver/st7565.h"
 
-volatile uint16_t gFoxCountdown_500ms;
-bool gFoxFoundMode;
 
 static const char *morse_table[36] = {
     ".-", "-...", "-.-.", "-..", ".", "..-.", "--.", "....", "..", ".---", "-.-", ".-..", "--", "-.", "---", ".--.", "--.-", ".-.", "...", "-", "..-", "...-", ".--", "-..-", "-.--", "--..", // A-Z
@@ -29,9 +33,9 @@ static const char *get_morse(char c)
     return "";
 }
 
-static void play_unit(uint16_t ms)
+static void play_unit(uint16_t ms, uint16_t pitch)
 {
-    BK4819_PlaySingleTone(800, ms, 0, false);
+    BK4819_PlaySingleTone(pitch, ms, 0, false);
     SYSTEM_DelayMs(ms);
     BK4819_EnterTxMute();
     SYSTEM_DelayMs(ms);
@@ -46,29 +50,54 @@ static void send_morse(const char *msg, uint8_t wpm)
     FUNCTION_Select(FUNCTION_TRANSMIT);
     SYSTEM_DelayMs(20);
 
+    BK4819_SetFrequency(gEeprom.FOX.frequency);
+    if (gEeprom.FOX.ctcss_hz)
+        BK4819_SetCTCSSFrequency(gEeprom.FOX.ctcss_hz);
+    else
+        BK4819_ExitSubAu();
+
     for (const char *p = msg; *p; p++) {
         if (*p == ' ') {
             SYSTEM_DelayMs(unit * 7);
             continue;
         }
         const char *code = get_morse(*p);
+        char disp[2] = {*p, 0};
+        UI_DisplayClear();
+        char freq[16];
+        sprintf(freq, "%3lu.%05lu", gEeprom.FOX.frequency / 100000, gEeprom.FOX.frequency % 100000);
+        UI_PrintStringSmallNormal(freq, 0, 127, 0);
+        if (gEeprom.FOX.ctcss_hz)
+        {
+            char tone[10];
+            sprintf(tone, "%u.%uHz", gEeprom.FOX.ctcss_hz / 10, gEeprom.FOX.ctcss_hz % 10);
+            UI_PrintStringSmallNormal(tone, 0, 127, 1);
+        }
+        UI_PrintStringSmallNormal(disp, 0, 127, 3);
+        ST7565_BlitFullScreen();
         for (const char *s = code; *s; s++) {
             if (*s == '-')
-                play_unit(unit * 3);
+                play_unit(unit * 3, gEeprom.FOX.pitch_hz);
             else
-                play_unit(unit);
+                play_unit(unit, gEeprom.FOX.pitch_hz);
         }
         SYSTEM_DelayMs(unit * 3);
     }
 
     APP_EndTransmission();
     FUNCTION_Select(FUNCTION_FOREGROUND);
+    UI_DisplayClear();
+    ST7565_BlitFullScreen();
 }
 
 void FOX_Init(void)
 {
     gFoxCountdown_500ms = 0;
     gFoxFoundMode = false;
+    if (gEeprom.FOX.pitch_hz == 0)
+        gEeprom.FOX.pitch_hz = 800;
+    if (gEeprom.FOX.frequency == 0)
+        gEeprom.FOX.frequency = gRxVfo->pTX->Frequency;
 }
 
 void FOX_TimeSlice500ms(void)

@@ -218,7 +218,7 @@ Many thanks to various people on Telegram for putting up with me during this eff
 
 ## Fox hunt transmitter
 
-Enable `ENABLE_FOXHUNT_TX` in the Makefile to build a small CW beacon. New menu entries allow enabling the beacon, adjusting WPM and interval and editing the transmitted text. Selecting `FoxFnd` sends "FOX FOUND" once.
+Enable `ENABLE_FOXHUNT_TX` in the Makefile to build a small CW beacon. New menu entries allow enabling the beacon, adjusting WPM and interval, setting CW pitch, transmit frequency and optional CTCSS tone, and editing the transmitted text. Selecting `FoxFnd` sends "FOX FOUND" once.
 
 ## License
 

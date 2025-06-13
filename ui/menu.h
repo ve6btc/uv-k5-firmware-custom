@@ -131,6 +131,9 @@ enum
         ,MENU_FOX_INTMAX
         ,MENU_FOX_RANDOM
         ,MENU_FOX_MSG
+        ,MENU_FOX_PITCH
+        ,MENU_FOX_FREQ
+        ,MENU_FOX_TONE
         ,MENU_FOX_FOUND
 #endif
 };
