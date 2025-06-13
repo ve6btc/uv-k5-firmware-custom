@@ -134,6 +134,8 @@ const t_menu_item MenuList[] =
         {"FxPtch", VOICE_ID_INVALID,                       MENU_FOX_PITCH     },
         {"FxFreq", VOICE_ID_INVALID,                       MENU_FOX_FREQ      },
         {"FxTone", VOICE_ID_INVALID,                       MENU_FOX_TONE      },
+        {"TxLead", VOICE_ID_INVALID,                       MENU_FOX_TX_LEAD   },
+        {"TxTail", VOICE_ID_INVALID,                       MENU_FOX_TX_TAIL   },
         {"FoxFnd", VOICE_ID_INVALID,                       MENU_FOX_FOUND     },
 #endif
 
@@ -877,6 +879,10 @@ void UI_DisplayMenu(void)
                                 strcpy(String, "OFF");
                         else
                                 sprintf(String, "%u.%uHz", gSubMenuSelection / 10, gSubMenuSelection % 10);
+                        break;
+                case MENU_FOX_TX_LEAD:
+                case MENU_FOX_TX_TAIL:
+                        sprintf(String, "%us", gSubMenuSelection);
                         break;
                 case MENU_FOX_FOUND:
                         strcpy(String, "PLAY");
