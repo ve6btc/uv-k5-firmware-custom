@@ -229,7 +229,7 @@ and `EXIT` to go back.
 
 ### FoxHunt sub menu items
 
-* **FoxTx** – enable/disable the beacon.
+* **FoxTx** – enable/disable the beacon. A message must be set before it can be enabled; press `EXIT` while active to stop transmission.
 * **FoxWPM** – CW speed in words per minute (5–40).
 * **IntMin** – minimum interval between transmissions (seconds).
 * **IntMax** – maximum interval used when randomising.
