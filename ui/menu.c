@@ -124,7 +124,7 @@ const t_menu_item MenuList[] =
 	{"RxMode", VOICE_ID_DUAL_STANDBY,                  MENU_TDR           },
         {"Sql",    VOICE_ID_SQUELCH,                       MENU_SQL           },
 #ifdef ENABLE_FOXHUNT_TX
-        {"FoxHnt", VOICE_ID_INVALID,                       MENU_FOX_MENU      },
+        {"FoxHunt",VOICE_ID_INVALID,                       MENU_FOX_MENU      },
         {"FoxTx",  VOICE_ID_INVALID,                       MENU_FOX_EN        },
         {"FoxWPM", VOICE_ID_INVALID,                       MENU_FOX_WPM       },
         {"IntMin", VOICE_ID_INVALID,                       MENU_FOX_INTMIN    },
@@ -133,7 +133,7 @@ const t_menu_item MenuList[] =
         {"FoxMsg", VOICE_ID_INVALID,                       MENU_FOX_MSG       },
         {"FxPtch", VOICE_ID_INVALID,                       MENU_FOX_PITCH     },
         {"FxFreq", VOICE_ID_INVALID,                       MENU_FOX_FREQ      },
-        {"FoxCcs", VOICE_ID_INVALID,                       MENU_FOX_TONE      },
+        {"FoxCTCSS",VOICE_ID_INVALID,                      MENU_FOX_TONE      },
         {"TxLead", VOICE_ID_INVALID,                       MENU_FOX_TX_LEAD   },
         {"TxTail", VOICE_ID_INVALID,                       MENU_FOX_TX_TAIL   },
         {"FoxFnd", VOICE_ID_INVALID,                       MENU_FOX_FOUND     },
@@ -878,7 +878,8 @@ void UI_DisplayMenu(void)
                         if (gSubMenuSelection == 0)
                                 strcpy(String, "OFF");
                         else
-                                sprintf(String, "%u.%uHz", gSubMenuSelection / 10, gSubMenuSelection % 10);
+                                sprintf(String, "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10,
+                                        CTCSS_Options[gSubMenuSelection - 1] % 10);
                         break;
                 case MENU_FOX_TX_LEAD:
                 case MENU_FOX_TX_TAIL:
