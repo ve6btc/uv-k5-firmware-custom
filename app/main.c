@@ -419,8 +419,17 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 {
-	if (!bKeyHeld && bKeyPressed) { // exit key pressed
-		gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+#ifdef ENABLE_FOXHUNT_TX
+        if (!bKeyHeld && bKeyPressed && gEeprom.FOX.enabled) {
+                gEeprom.FOX.enabled = false;
+                gFoxCountdown_500ms = 0;
+                gRequestSaveSettings = true;
+                gUpdateStatus = true;
+                return;
+        }
+#endif
+        if (!bKeyHeld && bKeyPressed) { // exit key pressed
+                gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
 #ifdef ENABLE_DTMF_CALLING
 		if (gDTMF_CallState != DTMF_CALL_STATE_NONE && gCurrentFunction != FUNCTION_TRANSMIT)

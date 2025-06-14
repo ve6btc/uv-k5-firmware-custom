@@ -821,6 +821,10 @@ void MENU_AcceptSetting(void)
                         break;
 #ifdef ENABLE_FOXHUNT_TX
                 case MENU_FOX_EN:
+                        if (gSubMenuSelection && gEeprom.FOX.message[0] == '\0') {
+                                gSubMenuSelection = 0;
+                                gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+                        }
                         gEeprom.FOX.enabled = gSubMenuSelection;
                         break;
                 case MENU_FOX_WPM:
