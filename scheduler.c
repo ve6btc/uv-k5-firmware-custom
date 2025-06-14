@@ -57,9 +57,6 @@ void SystickHandler(void)
 		gNextTimeslice_500ms = true;
 		
                 DECREMENT_AND_TRIGGER(gTxTimerCountdown_500ms, gTxTimeoutReached);
-#ifdef ENABLE_FOXHUNT_TX
-                DECREMENT(gFoxCountdown_500ms);
-#endif
                 DECREMENT(gSerialConfigCountDown_500ms);
 	}
 
