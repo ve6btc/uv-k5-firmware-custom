@@ -240,6 +240,7 @@ and `EXIT` to go back.
 * **FxPtch** – CW pitch in hertz (300–1500).
 * **FxFreq** – transmit frequency.
 * **FoxCTCSS** – optional CTCSS tone (0 = off).
+  Use `UP`/`DOWN` to cycle through the standard tones; number keys are ignored.
 * **FoxFnd** – send “FOX FOUND” once immediately.
   Pressing the `F` key while the beacon is active does the same and disables the beacon.
 

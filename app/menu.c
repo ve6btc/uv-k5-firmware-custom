@@ -1295,8 +1295,11 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 	int32_t  Max;
 	uint16_t Value = 0;
 
-	if (bKeyHeld || !bKeyPressed)
-		return;
+        if (bKeyHeld || !bKeyPressed)
+                return;
+
+        if (gIsInSubMenu && UI_MENU_GetCurrentMenuId() == MENU_FOX_TONE)
+                return;             // tone selection via UP/DOWN only
 
 	gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
