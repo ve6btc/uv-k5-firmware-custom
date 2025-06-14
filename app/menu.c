@@ -379,8 +379,8 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
                         *pMax = 1500;
                         break;
                 case MENU_FOX_FREQ:
-                        *pMin = frequencyBandTable[0].lower;
-                        *pMax = frequencyBandTable[BAND_N_ELEM - 1].upper;
+                        *pMin = frequencyBandTable[BAND3_137MHz].lower;
+                        *pMax = frequencyBandTable[BAND6_400MHz].upper;
                         break;
                 case MENU_FOX_TONE:
                         *pMin = 0;
@@ -1796,10 +1796,13 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
         }
         if (UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ) {
                 int32_t freq = (Direction * (int32_t)gTxVfo->StepFrequency) + gSubMenuSelection;
-                if (freq < (int32_t)frequencyBandTable[0].lower)
-                        freq = frequencyBandTable[0].lower;
-                else if (freq > (int32_t)frequencyBandTable[BAND_N_ELEM - 1].upper)
-                        freq = frequencyBandTable[BAND_N_ELEM - 1].upper;
+                if (freq < (int32_t)frequencyBandTable[BAND3_137MHz].lower)
+                        freq = frequencyBandTable[BAND3_137MHz].lower;
+                else if (freq >= (int32_t)frequencyBandTable[BAND3_137MHz].upper &&
+                         freq < (int32_t)frequencyBandTable[BAND6_400MHz].lower)
+                        freq = frequencyBandTable[BAND6_400MHz].lower;
+                else if (freq > (int32_t)frequencyBandTable[BAND6_400MHz].upper)
+                        freq = frequencyBandTable[BAND6_400MHz].upper;
                 gSubMenuSelection     = FREQUENCY_RoundToStep(freq, gTxVfo->StepFrequency);
                 gRequestDisplayScreen = DISPLAY_MENU;
                 return;
