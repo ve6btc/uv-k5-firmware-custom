@@ -1773,23 +1773,37 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 	if (SCANNER_IsScanning())
 		return;
 
-	if (!gIsInSubMenu) {
-		gMenuCursor = NUMBER_AddWithWraparound(gMenuCursor, -Direction, 0, gMenuListCount - 1);
+        if (!gIsInSubMenu) {
+                gMenuCursor = NUMBER_AddWithWraparound(gMenuCursor, -Direction, 0, gMenuListCount - 1);
 
-		gFlagRefreshSetting = true;
+#ifdef ENABLE_FOXHUNT_TX
+                if (!gInFoxMenu && gMenuCursor >= gFoxMenuFirstIndex && gMenuCursor <= gFoxMenuLastIndex) {
+                        if (Direction > 0)
+                                gMenuCursor = gFoxMenuLastIndex + 1;
+                        else
+                                gMenuCursor = gFoxMenuFirstIndex - 1;
+                } else if (gInFoxMenu) {
+                        if (gMenuCursor < gFoxMenuFirstIndex)
+                                gMenuCursor = gFoxMenuLastIndex;
+                        else if (gMenuCursor > gFoxMenuLastIndex)
+                                gMenuCursor = gFoxMenuFirstIndex;
+                }
+#endif
 
-		gRequestDisplayScreen = DISPLAY_MENU;
+                gFlagRefreshSetting = true;
 
-		if (UI_MENU_GetCurrentMenuId() != MENU_ABR
-			&& UI_MENU_GetCurrentMenuId() != MENU_ABR_MIN
-			&& UI_MENU_GetCurrentMenuId() != MENU_ABR_MAX
-			&& gEeprom.BACKLIGHT_TIME == 0) // backlight always off and not in the backlight menu
-		{
-			BACKLIGHT_TurnOff();
-		}
+                gRequestDisplayScreen = DISPLAY_MENU;
 
-		return;
-	}
+                if (UI_MENU_GetCurrentMenuId() != MENU_ABR
+                        && UI_MENU_GetCurrentMenuId() != MENU_ABR_MIN
+                        && UI_MENU_GetCurrentMenuId() != MENU_ABR_MAX
+                        && gEeprom.BACKLIGHT_TIME == 0) // backlight always off and not in the backlight menu
+                {
+                        BACKLIGHT_TurnOff();
+                }
+
+                return;
+        }
 
         if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET) {
                 int32_t Offset = (Direction * gTxVfo->StepFrequency) + gSubMenuSelection;
