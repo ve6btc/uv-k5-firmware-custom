@@ -413,8 +413,23 @@ void UI_DisplayMenu(void)
 	const unsigned int menu_list_width = 6; // max no. of characters on the menu list (left side)
 	const unsigned int menu_item_x1    = (8 * menu_list_width) + 2;
 	const unsigned int menu_item_x2    = LCD_WIDTH - 1;
-	unsigned int       i;
-	char               String[64];  // bigger cuz we can now do multi-line in one string (use '\n' char)
+        unsigned int       i;
+        char               String[64];  // bigger cuz we can now do multi-line in one string (use '\n' char)
+#ifdef ENABLE_FOXHUNT_TX
+        const t_menu_item *pMenuList  = MenuList;
+        uint8_t           menuCount  = gMenuListCount;
+        uint8_t           cursor     = gMenuCursor;
+
+        if (gInFoxMenu) {
+                pMenuList += gFoxMenuFirstIndex;
+                menuCount  = gFoxMenuLastIndex - gFoxMenuFirstIndex + 1;
+                cursor    -= gFoxMenuFirstIndex;
+        }
+#else
+        const t_menu_item *pMenuList  = MenuList;
+        uint8_t           menuCount  = gMenuListCount;
+        uint8_t           cursor     = gMenuCursor;
+#endif
 
 #ifdef ENABLE_DTMF_CALLING
 	char               Contact[16];
@@ -424,10 +439,10 @@ void UI_DisplayMenu(void)
 
 #ifndef ENABLE_CUSTOM_MENU_LAYOUT
 		// original menu layout
-	for (i = 0; i < 3; i++)
-		if (gMenuCursor > 0 || i > 0)
-			if ((gMenuListCount - 1) != gMenuCursor || i != 2)
-				UI_PrintString(MenuList[gMenuCursor + i - 1].name, 0, 0, i * 2, 8);
+        for (i = 0; i < 3; i++)
+                if (cursor > 0 || i > 0)
+                        if ((menuCount - 1) != cursor || i != 2)
+                                UI_PrintString(pMenuList[cursor + i - 1].name, 0, 0, i * 2, 8);
 
 	// invert the current menu list item pixels
 	for (i = 0; i < (8 * menu_list_width); i++)
@@ -445,13 +460,13 @@ void UI_DisplayMenu(void)
 		memcpy(gFrameBuffer[0] + (8 * menu_list_width) + 1, BITMAP_CurrentIndicator, sizeof(BITMAP_CurrentIndicator));
 
 	// draw the menu index number/count
-	sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+        sprintf(String, "%2u.%u", 1 + cursor, menuCount);
 
 	UI_PrintStringSmallNormal(String, 2, 0, 6);
 
 #else
 	{	// new menu layout .. experimental & unfinished
-		const int menu_index = gMenuCursor;  // current selected menu item
+		const int menu_index = cursor;  // current selected menu item
 		i = 1;
 
 		if (!gIsInSubMenu) {
@@ -459,35 +474,35 @@ void UI_DisplayMenu(void)
 			{	// leading menu items - small text
 				const int k = menu_index + i - 2;
 				if (k < 0)
-					UI_PrintStringSmallNormal(MenuList[gMenuListCount + k].name, 0, 0, i);  // wrap-a-round
-				else if (k >= 0 && k < (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[k].name, 0, 0, i);
+					UI_PrintStringSmallNormal(pMenuList[menuCount + k].name, 0, 0, i);  // wrap-a-round
+				else if (k >= 0 && k < (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[k].name, 0, 0, i);
 				i++;
 			}
 
 			// current menu item - keep big n fat
-			if (menu_index >= 0 && menu_index < (int)gMenuListCount)
-				UI_PrintString(MenuList[menu_index].name, 0, 0, 2, 8);
+			if (menu_index >= 0 && menu_index < (int)menuCount)
+				UI_PrintString(pMenuList[menu_index].name, 0, 0, 2, 8);
 			i++;
 
 			while (i < 4)
 			{	// trailing menu item - small text
 				const int k = menu_index + i - 2;
-				if (k >= 0 && k < (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[k].name, 0, 0, 1 + i);
-				else if (k >= (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[gMenuListCount - k].name, 0, 0, 1 + i);  // wrap-a-round
+				if (k >= 0 && k < (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[k].name, 0, 0, 1 + i);
+				else if (k >= (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[menuCount - k].name, 0, 0, 1 + i);  // wrap-a-round
 				i++;
 			}
 
 			// draw the menu index number/count
-			sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+			sprintf(String, "%2u.%u", 1 + cursor, menuCount);
 			UI_PrintStringSmallNormal(String, 2, 0, 6);
 		}
-		else if (menu_index >= 0 && menu_index < (int)gMenuListCount)
+		else if (menu_index >= 0 && menu_index < (int)menuCount)
 		{	// current menu item
 //			strcat(String, ":");
-			UI_PrintString(MenuList[menu_index].name, 0, 0, 0, 8);
+			UI_PrintString(pMenuList[menu_index].name, 0, 0, 0, 8);
 //			UI_PrintStringSmallNormal(String, 0, 0, 0);
 		}
 	}
