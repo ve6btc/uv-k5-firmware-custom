@@ -872,7 +872,16 @@ void UI_DisplayMenu(void)
                         sprintf(String, "%uHz", gSubMenuSelection);
                         break;
                 case MENU_FOX_FREQ:
-                        sprintf(String, "%3u.%03u", gSubMenuSelection / 100000, (gSubMenuSelection % 100000) / 100);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0) {
+                                sprintf(String, "%3u.%03u", gSubMenuSelection / 100000, (gSubMenuSelection % 100000) / 100);
+                                UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
+                        } else {
+                                const char * ascii = INPUTBOX_GetAscii();
+                                sprintf(String, "%.3s.%.3s  ", ascii, ascii + 3);
+                                UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
+                        }
+                        UI_PrintString("MHz",  menu_item_x1, menu_item_x2, 3, 8);
+                        already_printed = true;
                         break;
                 case MENU_FOX_TONE:
                         if (gSubMenuSelection == 0)

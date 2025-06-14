@@ -1369,8 +1369,8 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		return;
 	}
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET) {
-		uint32_t Frequency;
+        if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET || UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ) {
+                uint32_t Frequency;
 
 		if (gInputBoxIndex < 6) { // invalid frequency
 #ifdef ENABLE_VOICE
@@ -1383,8 +1383,8 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		gAnotherVoiceID = (VOICE_ID_t)Key;
 #endif
 
-		Frequency = StrToUL(INPUTBOX_GetAscii())*100;
-		gSubMenuSelection = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
+                Frequency = StrToUL(INPUTBOX_GetAscii())*100;
+                gSubMenuSelection = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
 
 		gInputBoxIndex = 0;
 		return;
@@ -1466,7 +1466,7 @@ static void MENU_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 
                 if (gIsInSubMenu)
                 {
-			if (gInputBoxIndex == 0 || UI_MENU_GetCurrentMenuId() != MENU_OFFSET)
+                        if (gInputBoxIndex == 0 || (UI_MENU_GetCurrentMenuId() != MENU_OFFSET && UI_MENU_GetCurrentMenuId() != MENU_FOX_FREQ))
 			{
 				gAskForConfirmation = 0;
 				gIsInSubMenu        = false;
