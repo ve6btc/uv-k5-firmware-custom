@@ -856,11 +856,17 @@ void UI_DisplayMenu(void)
                         strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
                         break;
                 case MENU_FOX_WPM:
-                        sprintf(String, "%u WPM", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%u WPM", gSubMenuSelection);
+                        else
+                                sprintf(String, "%u WPM", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_INTMIN:
                 case MENU_FOX_INTMAX:
-                        sprintf(String, "%us", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%us", gSubMenuSelection);
+                        else
+                                sprintf(String, "%us", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_MSG:
                         if(edit_index >= 0)
@@ -869,10 +875,22 @@ void UI_DisplayMenu(void)
                                 strcpy(String, gEeprom.FOX.message);
                         break;
                 case MENU_FOX_PITCH:
-                        sprintf(String, "%uHz", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%uHz", gSubMenuSelection);
+                        else
+                                sprintf(String, "%uHz", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_FREQ:
-                        sprintf(String, "%3u.%03u", gSubMenuSelection / 100000, (gSubMenuSelection % 100000) / 100);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0) {
+                                sprintf(String, "%3u.%03u", gSubMenuSelection / 100000, (gSubMenuSelection % 100000) / 100);
+                                UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
+                        } else {
+                                const char * ascii = INPUTBOX_GetAscii();
+                                sprintf(String, "%.3s.%.3s  ", ascii, ascii + 3);
+                                UI_PrintString(String, menu_item_x1, menu_item_x2, 1, 8);
+                        }
+                        UI_PrintString("MHz",  menu_item_x1, menu_item_x2, 3, 8);
+                        already_printed = true;
                         break;
                 case MENU_FOX_TONE:
                         if (gSubMenuSelection == 0)
@@ -883,7 +901,10 @@ void UI_DisplayMenu(void)
                         break;
                 case MENU_FOX_TX_LEAD:
                 case MENU_FOX_TX_TAIL:
-                        sprintf(String, "%us", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%us", gSubMenuSelection);
+                        else
+                                sprintf(String, "%us", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_FOUND:
                         strcpy(String, "PLAY");
