@@ -112,6 +112,13 @@ void MENU_StopCssScan(void)
 	gUpdateStatus = true;
 }
 
+#define FOX_MSG_LEN (sizeof(gEeprom.FOX.message) - 1)
+
+static inline int get_edit_max_len(void)
+{
+       return (UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) ? FOX_MSG_LEN : 10;
+}
+
 int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 {
 	switch (menu_id)
@@ -1306,13 +1313,13 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && edit_index >= 0)
 	{	// currently editing the channel name
 
-		if (edit_index < 10)
+		if (edit_index < get_edit_max_len())
 		{
 			if (Key <= KEY_9)
 			{
 				edit[edit_index] = '0' + Key - KEY_0;
 
-				if (++edit_index >= 10)
+				if (++edit_index >= get_edit_max_len())
 				{	// exit edit
 					gFlagAcceptSetting  = false;
 					gAskForConfirmation = 1;
@@ -1596,7 +1603,7 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
 			// pad the channel name out with '_'
 			edit_index = strlen(edit);
-			while (edit_index < 10)
+			while (edit_index < get_edit_max_len())
 				edit[edit_index++] = '_';
 			edit[edit_index] = 0;
 			edit_index = 0;  // 'edit_index' is going to be used as the cursor position
@@ -1607,20 +1614,13 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 			return;
 		}
 		else
-		if (edit_index >= 0 && edit_index < 10)
-		{	// editing the channel name characters
-
-			if (++edit_index < 10)
-				return;	// next char
-
-			// exit
-			gFlagAcceptSetting  = false;
-			gAskForConfirmation = 0;
-			if (memcmp(edit_original, edit, sizeof(edit_original)) == 0) {
-				// no change - drop it
-				gIsInSubMenu = false;
-			}
-		}
+		if (edit_index >= 0 && edit_index < get_edit_max_len())
+                {       // finish editing and save
+                        gFlagAcceptSetting = true;
+                        gIsInSubMenu = false;
+                        gAskForConfirmation = 0;
+                        edit_index = -1;
+                }
 	}
 
 	// exiting the sub menu
@@ -1693,17 +1693,11 @@ static void MENU_Key_STAR(const bool bKeyPressed, const bool bKeyHeld)
         if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && edit_index >= 0)
 	{	// currently editing the channel name
 
-		if (edit_index < 10)
-		{
-			edit[edit_index] = '-';
-
-			if (++edit_index >= 10)
-			{	// exit edit
-				gFlagAcceptSetting  = false;
-				gAskForConfirmation = 1;
-			}
-
-			gRequestDisplayScreen = DISPLAY_MENU;
+                if (edit_index > 0)
+                {
+                        edit_index--;
+                        edit[edit_index] = '_' ;
+                        gRequestDisplayScreen = DISPLAY_MENU;
 		}
 
 		return;
@@ -1740,7 +1734,7 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 
         if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) && gIsInSubMenu && edit_index >= 0)
 	{	// change the character
-		if (bKeyPressed && edit_index < 10 && Direction != 0)
+		if (bKeyPressed && edit_index < get_edit_max_len() && Direction != 0)
 		{
 			const char   unwanted[] = "$%&!\"':;?^`|{}";
 			char         c          = edit[edit_index] + Direction;
@@ -1891,15 +1885,13 @@ void MENU_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 				if (!bKeyHeld && bKeyPressed)
 				{
 					gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
-					if (edit_index < 10)
+					if (edit_index < get_edit_max_len())
 					{
-						edit[edit_index] = ' ';
-						if (++edit_index >= 10)
-						{	// exit edit
-							gFlagAcceptSetting  = false;
-							gAskForConfirmation = 1;
-						}
-						gRequestDisplayScreen = DISPLAY_MENU;
+                                                if (edit[edit_index] == '_' )
+                                                        edit[edit_index] = ' ';
+                                                if (edit_index < get_edit_max_len() - 1)
+                                                        edit_index++;
+                                                gRequestDisplayScreen = DISPLAY_MENU;
 					}
 				}
 				break;

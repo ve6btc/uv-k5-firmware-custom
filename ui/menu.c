@@ -404,9 +404,10 @@ uint8_t UI_MENU_GetMenuIdx(uint8_t id)
 int32_t gSubMenuSelection;
 
 // edit box
-char    edit_original[17]; // a copy of the text before editing so that we can easily test for changes/difference
-char    edit[17];
+char    edit_original[25]; // a copy of the text before editing so that we can easily test for changes/difference
+char    edit[25];
 int     edit_index;
+bool    gEditBlink;
 
 void UI_DisplayMenu(void)
 {
@@ -869,10 +870,20 @@ void UI_DisplayMenu(void)
                                 sprintf(String, "%us", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_MSG:
-                        if(edit_index >= 0)
-                                strcpy(String, edit);
-                        else
-                                strcpy(String, gEeprom.FOX.message);
+                        if(edit_index >= 0) {
+                                unsigned int start = 0;
+                                if(edit_index >= 16)
+                                        start = edit_index - 15;
+                                strncpy(String, edit + start, 16);
+                                String[16] = 0;
+                                UI_PrintString(String, menu_item_x1, menu_item_x2, 2, 8);
+                                if(gEditBlink)
+                                        UI_PrintString("_", menu_item_x1 + (8 * (edit_index - start)), 0, 4, 8);
+                                already_printed = true;
+                        } else {
+                                strncpy(String, gEeprom.FOX.message, 16);
+                                String[16] = 0;
+                        }
                         break;
                 case MENU_FOX_PITCH:
                         if (!gIsInSubMenu || gInputBoxIndex == 0)

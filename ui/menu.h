@@ -184,9 +184,10 @@ extern uint8_t           gMenuCursor;
 
 extern int32_t           gSubMenuSelection;
 				         
-extern char              edit_original[17];
-extern char              edit[17];
+extern char              edit_original[25];
+extern char              edit[25];
 extern int               edit_index;
+extern bool              gEditBlink;
 
 void UI_DisplayMenu(void);
 int UI_MENU_GetCurrentMenuId();

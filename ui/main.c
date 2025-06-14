@@ -34,6 +34,7 @@
 #include "settings.h"
 #include "ui/helper.h"
 #include "ui/inputbox.h"
+#include "ui/menu.h"
 #include "ui/main.h"
 #include "ui/ui.h"
 
@@ -288,16 +289,23 @@ void UI_MAIN_PrintAGC(bool now)
 
 void UI_MAIN_TimeSlice500ms(void)
 {
-	if(gScreenToDisplay==DISPLAY_MAIN) {
+        if(gScreenToDisplay==DISPLAY_MAIN) {
 #ifdef ENABLE_AGC_SHOW_DATA
-		UI_MAIN_PrintAGC(true);
-		return;
+                UI_MAIN_PrintAGC(true);
+                return;
 #endif
 
 		if(FUNCTION_IsRx()) {
 			DisplayRSSIBar(true);
-		}
-	}
+        }
+
+        if(gScreenToDisplay == DISPLAY_MENU &&
+           UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG &&
+           gIsInSubMenu && edit_index >= 0) {
+                gEditBlink = !gEditBlink;
+                gRequestDisplayScreen = DISPLAY_MENU;
+        }
+}
 }
 
 // ***************************************************************************
