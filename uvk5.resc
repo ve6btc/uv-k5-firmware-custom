@@ -1,0 +1,6 @@
+using sysbus
+machine LoadPlatformDescription @platforms/boards/stm32f072b_discovery.repl
+sysbus LoadBinary @firmware.packed.bin 0x08000000
+emulation CreateServerSocketTerminal 1234 "uart1"
+connector Connect sysbus.usart1 uart1
+start
