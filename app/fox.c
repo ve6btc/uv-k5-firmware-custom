@@ -55,9 +55,14 @@ static void send_morse(const char *msg, uint8_t wpm)
     uint16_t unit = 1200 / wpm;
 
     FUNCTION_Select(FUNCTION_TRANSMIT);
+    RADIO_SetModulation(MODULATION_FM);
     SYSTEM_DelayMs(20);
 
     BK4819_SetFrequency(gEeprom.FOX.frequency);
+    BK4819_PickRXFilterPathBasedOnFrequency(gEeprom.FOX.frequency);
+    BK4819_SetupPowerAmplifier(gCurrentVfo->TXP_CalculatedSetting, gEeprom.FOX.frequency);
+    BK4819_PrepareTransmit();
+
     if (gEeprom.FOX.ctcss_hz)
         BK4819_SetCTCSSFrequency(gEeprom.FOX.ctcss_hz);
     else
