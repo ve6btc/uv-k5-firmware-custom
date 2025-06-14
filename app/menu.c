@@ -1486,11 +1486,21 @@ static void MENU_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 			return;
 		}
 
-		#ifdef ENABLE_VOICE
-			gAnotherVoiceID = VOICE_ID_CANCEL;
-		#endif
+               #ifdef ENABLE_VOICE
+                        gAnotherVoiceID = VOICE_ID_CANCEL;
+               #endif
 
-		gRequestDisplayScreen = DISPLAY_MAIN;
+#ifdef ENABLE_FOXHUNT_TX
+               if (gInFoxMenu) {
+                        gInFoxMenu = false;
+                        gMenuCursor = gFoxMenuRootIndex;
+                        gFlagRefreshSetting = true;
+                        gRequestDisplayScreen = DISPLAY_MENU;
+                        return;
+               }
+#endif
+
+               gRequestDisplayScreen = DISPLAY_MAIN;
 
 		if (gEeprom.BACKLIGHT_TIME == 0) // backlight set to always off
 		{
@@ -1527,7 +1537,7 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
                         gMenuCursor = gFoxMenuFirstIndex;
                         gFlagRefreshSetting = true;
                         return;
-                } else if (gInFoxMenu) {
+                } else if (gInFoxMenu && UI_MENU_GetCurrentMenuId() == MENU_FOX_MENU) {
                         gInFoxMenu = false;
                         gMenuCursor = gFoxMenuRootIndex;
                         gFlagRefreshSetting = true;
