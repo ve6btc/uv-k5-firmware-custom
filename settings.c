@@ -296,22 +296,39 @@ void SETTINGS_InitEEPROM(void)
                 } __attribute__((packed)) foxCfg;
                 EEPROM_ReadBuffer(0x1FD0, &foxCfg, sizeof(foxCfg));
                 memcpy(&gEeprom.FOX, &foxCfg, sizeof(foxCfg));
-                if (gEeprom.FOX.wpm == 0 || gEeprom.FOX.wpm == 0xFF)
+                if (gEeprom.FOX.enabled > 1)
+                        gEeprom.FOX.enabled = 0;
+                if (gEeprom.FOX.random > 1)
+                        gEeprom.FOX.random = 0;
+                if (gEeprom.FOX.wpm < 5 || gEeprom.FOX.wpm > 40)
                         gEeprom.FOX.wpm = 5;
-                if (gEeprom.FOX.interval_min == 0 || gEeprom.FOX.interval_min == 0xFFFF)
+                if (gEeprom.FOX.interval_min < 1 || gEeprom.FOX.interval_min > 600 || gEeprom.FOX.interval_min == 0xFFFF)
                         gEeprom.FOX.interval_min = 30;
-                if (gEeprom.FOX.interval_max == 0xFFFF)
+                if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min || gEeprom.FOX.interval_max > 600 || gEeprom.FOX.interval_max == 0xFFFF)
                         gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
-                if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min)
-                        gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
-                if (gEeprom.FOX.frequency == 0 || gEeprom.FOX.frequency == 0xFFFFFFFF)
+                if (gEeprom.FOX.frequency < 1000000 || gEeprom.FOX.frequency > 60000000 || gEeprom.FOX.frequency == 0xFFFFFFFF)
                         gEeprom.FOX.frequency = 14652000;
-                if (gEeprom.FOX.power > 2) gEeprom.FOX.power = 1;
-                if (gEeprom.FOX.message[0] == '\0') strcpy(gEeprom.FOX.message, "FOX");
-                if (gEeprom.FOX.pitch_hz == 0) gEeprom.FOX.pitch_hz = 600;
-                if (gEeprom.FOX.ctcss_hz > 2541) gEeprom.FOX.ctcss_hz = 0;
-                if (gEeprom.FOX.tx_lead_time > 60) gEeprom.FOX.tx_lead_time = 0;
-                if (gEeprom.FOX.tx_tail_time > 60) gEeprom.FOX.tx_tail_time = 0;
+                if (gEeprom.FOX.power > 2)
+                        gEeprom.FOX.power = 1;
+                if (gEeprom.FOX.message[0] == '\0')
+                        strcpy(gEeprom.FOX.message, "FOX");
+                if (gEeprom.FOX.pitch_hz < 300 || gEeprom.FOX.pitch_hz > 1500)
+                        gEeprom.FOX.pitch_hz = 600;
+                {
+                        bool ctcss_ok = false;
+                        for (unsigned int i = 0; i < ARRAY_SIZE(CTCSS_Options); i++) {
+                                if (CTCSS_Options[i] == gEeprom.FOX.ctcss_hz) {
+                                        ctcss_ok = true;
+                                        break;
+                                }
+                        }
+                        if (!ctcss_ok)
+                                gEeprom.FOX.ctcss_hz = 0;
+                }
+                if (gEeprom.FOX.tx_lead_time > 60)
+                        gEeprom.FOX.tx_lead_time = 0;
+                if (gEeprom.FOX.tx_tail_time > 60)
+                        gEeprom.FOX.tx_tail_time = 0;
         }
 #endif
 }

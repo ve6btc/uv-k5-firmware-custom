@@ -856,11 +856,17 @@ void UI_DisplayMenu(void)
                         strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
                         break;
                 case MENU_FOX_WPM:
-                        sprintf(String, "%u WPM", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%u WPM", gSubMenuSelection);
+                        else
+                                sprintf(String, "%u WPM", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_INTMIN:
                 case MENU_FOX_INTMAX:
-                        sprintf(String, "%us", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%us", gSubMenuSelection);
+                        else
+                                sprintf(String, "%us", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_MSG:
                         if(edit_index >= 0)
@@ -869,7 +875,10 @@ void UI_DisplayMenu(void)
                                 strcpy(String, gEeprom.FOX.message);
                         break;
                 case MENU_FOX_PITCH:
-                        sprintf(String, "%uHz", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%uHz", gSubMenuSelection);
+                        else
+                                sprintf(String, "%uHz", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_FREQ:
                         if (!gIsInSubMenu || gInputBoxIndex == 0) {
@@ -892,7 +901,10 @@ void UI_DisplayMenu(void)
                         break;
                 case MENU_FOX_TX_LEAD:
                 case MENU_FOX_TX_TAIL:
-                        sprintf(String, "%us", gSubMenuSelection);
+                        if (!gIsInSubMenu || gInputBoxIndex == 0)
+                                sprintf(String, "%us", gSubMenuSelection);
+                        else
+                                sprintf(String, "%us", StrToUL(INPUTBOX_GetAscii()));
                         break;
                 case MENU_FOX_FOUND:
                         strcpy(String, "PLAY");
