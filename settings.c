@@ -312,6 +312,7 @@ void SETTINGS_InitEEPROM(void)
                         gEeprom.FOX.power = 1;
                 if (gEeprom.FOX.message[0] == '\0')
                         strcpy(gEeprom.FOX.message, "FOX");
+                gEeprom.FOX.message[sizeof(gEeprom.FOX.message) - 1] = '\0';
                 if (gEeprom.FOX.pitch_hz < 300 || gEeprom.FOX.pitch_hz > 1500)
                         gEeprom.FOX.pitch_hz = 600;
                 {
@@ -663,6 +664,7 @@ void SETTINGS_SaveSettings(void)
                         uint16_t tx_tail_time;
                         char     message[24];
                 } __attribute__((packed)) foxCfg;
+                gEeprom.FOX.message[sizeof(gEeprom.FOX.message) - 1] = '\0';
                 memcpy(&foxCfg, &gEeprom.FOX, sizeof(foxCfg));
                 EEPROM_WriteBuffer(0x1FD0, &foxCfg);
         }
