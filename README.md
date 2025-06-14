@@ -223,11 +223,11 @@ beacon in the firmware.
 
 ### Accessing the menu
 
-Select **FoxHnt** in the main menu and press `MENU` to enter the beacon
+Select **FoxHunt** in the main menu and press `MENU` to enter the beacon
 configuration sub menu. Navigate with `UP`/`DOWN`, press `MENU` to edit a value
 and `EXIT` to go back.
 
-### FoxHnt sub menu items
+### FoxHunt sub menu items
 
 * **FoxTx** – enable/disable the beacon.
 * **FoxWPM** – CW speed in words per minute (5–40).
@@ -239,7 +239,7 @@ and `EXIT` to go back.
   hyphen and `F` for a space.  Press `MENU` again when done.
 * **FxPtch** – CW pitch in hertz (300–1500).
 * **FxFreq** – transmit frequency.
-* **FxTone** – optional CTCSS tone (0 = off).
+* **FoxCTCSS** – optional CTCSS tone (0 = off).
 * **FoxFnd** – send “FOX FOUND” once immediately.
   Pressing the `F` key while the beacon is active does the same and disables the beacon.
 

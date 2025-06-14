@@ -131,9 +131,9 @@ void FOX_Init(void)
     gFoxCountdown_500ms = 0;
     gFoxFoundMode = false;
     if (gEeprom.FOX.pitch_hz == 0)
-        gEeprom.FOX.pitch_hz = 800;
+        gEeprom.FOX.pitch_hz = 600;
     if (gEeprom.FOX.frequency == 0)
-        gEeprom.FOX.frequency = gRxVfo->pTX->Frequency;
+        gEeprom.FOX.frequency = 14652000;
 }
 
 void FOX_TimeSlice500ms(void)

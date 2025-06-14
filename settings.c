@@ -296,13 +296,13 @@ void SETTINGS_InitEEPROM(void)
                 } __attribute__((packed)) foxCfg;
                 EEPROM_ReadBuffer(0x1FD0, &foxCfg, sizeof(foxCfg));
                 memcpy(&gEeprom.FOX, &foxCfg, sizeof(foxCfg));
-                if (gEeprom.FOX.wpm == 0) gEeprom.FOX.wpm = 10;
-                if (gEeprom.FOX.interval_min == 0) gEeprom.FOX.interval_min = 60;
+                if (gEeprom.FOX.wpm == 0) gEeprom.FOX.wpm = 5;
+                if (gEeprom.FOX.interval_min == 0) gEeprom.FOX.interval_min = 30;
                 if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min) gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
-                if (gEeprom.FOX.frequency == 0) gEeprom.FOX.frequency = SETTINGS_FetchChannelFrequency(0);
+                if (gEeprom.FOX.frequency == 0) gEeprom.FOX.frequency = 14652000;
                 if (gEeprom.FOX.power > 2) gEeprom.FOX.power = 1;
                 if (gEeprom.FOX.message[0] == '\0') strcpy(gEeprom.FOX.message, "FOX");
-                if (gEeprom.FOX.pitch_hz == 0) gEeprom.FOX.pitch_hz = 800;
+                if (gEeprom.FOX.pitch_hz == 0) gEeprom.FOX.pitch_hz = 600;
                 if (gEeprom.FOX.ctcss_hz > 2541) gEeprom.FOX.ctcss_hz = 0;
                 if (gEeprom.FOX.tx_lead_time > 60) gEeprom.FOX.tx_lead_time = 0;
                 if (gEeprom.FOX.tx_tail_time > 60) gEeprom.FOX.tx_tail_time = 0;

@@ -379,12 +379,12 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
                         *pMax = 1500;
                         break;
                 case MENU_FOX_FREQ:
-                        *pMin = frequencyBandTable[0].lower;
-                        *pMax = frequencyBandTable[BAND_N_ELEM - 1].upper;
+                        *pMin = frequencyBandTable[BAND3_137MHz].lower;
+                        *pMax = frequencyBandTable[BAND6_400MHz].upper;
                         break;
                 case MENU_FOX_TONE:
                         *pMin = 0;
-                        *pMax = 2541;
+                        *pMax = ARRAY_SIZE(CTCSS_Options);
                         break;
                 case MENU_FOX_TX_LEAD:
                 case MENU_FOX_TX_TAIL:
@@ -846,7 +846,7 @@ void MENU_AcceptSetting(void)
                         gEeprom.FOX.frequency = gSubMenuSelection;
                         break;
                 case MENU_FOX_TONE:
-                        gEeprom.FOX.ctcss_hz = gSubMenuSelection;
+                        gEeprom.FOX.ctcss_hz = (gSubMenuSelection == 0) ? 0 : CTCSS_Options[gSubMenuSelection - 1];
                         break;
                 case MENU_FOX_TX_LEAD:
                         gEeprom.FOX.tx_lead_time = gSubMenuSelection;
@@ -1240,7 +1240,17 @@ void MENU_ShowCurrentSetting(void)
                         gSubMenuSelection = gEeprom.FOX.frequency;
                         break;
                 case MENU_FOX_TONE:
-                        gSubMenuSelection = gEeprom.FOX.ctcss_hz;
+                        if (gEeprom.FOX.ctcss_hz == 0) {
+                                gSubMenuSelection = 0;
+                        } else {
+                                gSubMenuSelection = 0;
+                                for (unsigned int i = 0; i < ARRAY_SIZE(CTCSS_Options); i++) {
+                                        if (CTCSS_Options[i] == gEeprom.FOX.ctcss_hz) {
+                                                gSubMenuSelection = i + 1;
+                                                break;
+                                        }
+                                }
+                        }
                         break;
                 case MENU_FOX_TX_LEAD:
                         gSubMenuSelection = gEeprom.FOX.tx_lead_time;
@@ -1796,10 +1806,13 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
         }
         if (UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ) {
                 int32_t freq = (Direction * (int32_t)gTxVfo->StepFrequency) + gSubMenuSelection;
-                if (freq < (int32_t)frequencyBandTable[0].lower)
-                        freq = frequencyBandTable[0].lower;
-                else if (freq > (int32_t)frequencyBandTable[BAND_N_ELEM - 1].upper)
-                        freq = frequencyBandTable[BAND_N_ELEM - 1].upper;
+                if (freq < (int32_t)frequencyBandTable[BAND3_137MHz].lower)
+                        freq = frequencyBandTable[BAND3_137MHz].lower;
+                else if (freq >= (int32_t)frequencyBandTable[BAND3_137MHz].upper &&
+                         freq < (int32_t)frequencyBandTable[BAND6_400MHz].lower)
+                        freq = frequencyBandTable[BAND6_400MHz].lower;
+                else if (freq > (int32_t)frequencyBandTable[BAND6_400MHz].upper)
+                        freq = frequencyBandTable[BAND6_400MHz].upper;
                 gSubMenuSelection     = FREQUENCY_RoundToStep(freq, gTxVfo->StepFrequency);
                 gRequestDisplayScreen = DISPLAY_MENU;
                 return;
