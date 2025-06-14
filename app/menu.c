@@ -1534,17 +1534,6 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
                         gRequestDisplayScreen = DISPLAY_MENU;
                         return;
                 }
-
-#ifdef ENABLE_FOXHUNT_TX
-                if (gInFoxMenu)
-                {
-                        gInFoxMenu = false;
-                        gMenuCursor = gFoxMenuRootIndex;
-                        gFlagRefreshSetting = true;
-                        gRequestDisplayScreen = DISPLAY_MENU;
-                        return;
-                }
-#endif
 #endif
 		#ifdef ENABLE_VOICE
 			if (UI_MENU_GetCurrentMenuId() != MENU_SCR)
