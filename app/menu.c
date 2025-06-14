@@ -1386,23 +1386,26 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
         if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET || UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ) {
                 uint32_t Frequency;
 
-		if (gInputBoxIndex < 6) { // invalid frequency
+                if (gInputBoxIndex < 6) { // invalid frequency
 #ifdef ENABLE_VOICE
-			gAnotherVoiceID = (VOICE_ID_t)Key;
+                        gAnotherVoiceID = (VOICE_ID_t)Key;
 #endif
-			return;
-		}
+                        return;
+                }
 
 #ifdef ENABLE_VOICE
-		gAnotherVoiceID = (VOICE_ID_t)Key;
+                gAnotherVoiceID = (VOICE_ID_t)Key;
 #endif
 
-                Frequency = StrToUL(INPUTBOX_GetAscii())*100;
-                gSubMenuSelection = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
+                Frequency = StrToUL(INPUTBOX_GetAscii()) * 100;
+                if (UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ)
+                        gSubMenuSelection = Frequency;     // keep exact frequency
+                else
+                        gSubMenuSelection = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
 
-		gInputBoxIndex = 0;
-		return;
-	}
+                gInputBoxIndex = 0;
+                return;
+        }
 
 	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_CH ||
 		UI_MENU_GetCurrentMenuId() == MENU_DEL_CH ||
