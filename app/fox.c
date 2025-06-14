@@ -13,6 +13,8 @@
 #include "driver/system.h"
 #include "app/app.h"
 #include "radio.h"
+#include "frequencies.h"
+#include "driver/eeprom.h"
 #include "ui/helper.h"
 #include "driver/st7565.h"
 #include "driver/keyboard.h"
@@ -42,6 +44,30 @@ static void play_unit(uint16_t ms, uint16_t pitch)
     SYSTEM_DelayMs(ms);
 }
 
+static uint8_t calc_pa_bias(uint32_t freq, uint8_t power)
+{
+    uint8_t txp[3];
+    const FREQUENCY_Band_t band = FREQUENCY_GetBand(freq);
+    EEPROM_ReadBuffer(0x1ED0 + (band * 16) + (power * 3), txp, 3);
+#ifdef ENABLE_REDUCE_LOW_MID_TX_POWER
+    if (power == OUTPUT_POWER_LOW) {
+        txp[0] /= 5;
+        txp[1] /= 5;
+        txp[2] /= 5;
+    } else if (power == OUTPUT_POWER_MID) {
+        txp[0] /= 3;
+        txp[1] /= 3;
+        txp[2] /= 3;
+    }
+#endif
+    return FREQUENCY_CalculateOutputPower(txp[0], txp[1], txp[2],
+                                          frequencyBandTable[band].lower,
+                                          (frequencyBandTable[band].lower +
+                                           frequencyBandTable[band].upper) / 2,
+                                          frequencyBandTable[band].upper,
+                                          freq);
+}
+
 static bool check_exit_request(void)
 {
     KEY_Code_t key = KEYBOARD_Poll();
@@ -60,7 +86,8 @@ static void send_morse(const char *msg, uint8_t wpm)
 
     BK4819_SetFrequency(gEeprom.FOX.frequency);
     BK4819_PickRXFilterPathBasedOnFrequency(gEeprom.FOX.frequency);
-    BK4819_SetupPowerAmplifier(gCurrentVfo->TXP_CalculatedSetting, gEeprom.FOX.frequency);
+    uint8_t bias = calc_pa_bias(gEeprom.FOX.frequency, gEeprom.FOX.power);
+    BK4819_SetupPowerAmplifier(bias, gEeprom.FOX.frequency);
     BK4819_PrepareTransmit();
 
     if (gEeprom.FOX.ctcss_hz)
