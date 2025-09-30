@@ -993,16 +993,13 @@ void BK4819_PlaySingleTone(const unsigned int tone_Hz, const unsigned int delay,
 {
 	BK4819_EnterTxMute();
 
-	if (play_speaker)
-	{
-		AUDIO_AudioPathOn();
-		BK4819_SetAF(BK4819_AF_BEEP);
-	}
-	else
-		BK4819_SetAF(BK4819_AF_MUTE);
+        BK4819_SetAF(BK4819_AF_BEEP);
+
+        if (play_speaker)
+                AUDIO_AudioPathOn();
 
 
-	BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_ENABLE_TONE1 | ((level & 0x7f) << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
+        BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_ENABLE_TONE1 | ((level & 0x7f) << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
 
 	BK4819_EnableTXLink();
 	SYSTEM_DelayMs(50);
@@ -1013,11 +1010,10 @@ void BK4819_PlaySingleTone(const unsigned int tone_Hz, const unsigned int delay,
 	SYSTEM_DelayMs(delay);
 	BK4819_EnterTxMute();
 
-	if (play_speaker)
-	{
-		AUDIO_AudioPathOff();
-		BK4819_SetAF(BK4819_AF_MUTE);
-	}
+        if (play_speaker)
+                AUDIO_AudioPathOff();
+
+        BK4819_SetAF(BK4819_AF_MUTE);
 
 	BK4819_WriteRegister(BK4819_REG_70, 0x0000);
 	BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);
