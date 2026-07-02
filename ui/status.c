@@ -33,6 +33,9 @@
 #include "ui/helper.h"
 #include "ui/ui.h"
 #include "ui/status.h"
+#ifdef ENABLE_FOXHUNT_TX
+	#include "app/fox.h"
+#endif
 
 void UI_DisplayStatus()
 {
@@ -96,6 +99,15 @@ void UI_DisplayStatus()
 		}
 	}
 	x += 10;  // font character width
+
+#ifdef ENABLE_FOXHUNT_TX
+	// FOX beacon armed indicator ("FND" once the fox has been found)
+	if (FOX_IsEnabled()) {
+		UI_PrintStringSmallBufferNormal(FOX_IsFoundMode() ? "FND" : "FOX", line + x + 1);
+		x1 = x + (3 * 7) + 2;
+	}
+	x += (3 * 7) + 2;
+#endif
 
 #ifdef ENABLE_VOICE
 	// VOICE indicator

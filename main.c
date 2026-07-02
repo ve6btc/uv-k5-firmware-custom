@@ -28,6 +28,9 @@
 #include "radio.h"
 #include "settings.h"
 #include "version.h"
+#ifdef ENABLE_FOXHUNT_TX
+#include "app/fox.h"
+#endif
 
 #include "app/app.h"
 #include "app/dtmf.h"
@@ -95,6 +98,9 @@ void Main(void)
 	SETTINGS_InitEEPROM();
 	SETTINGS_WriteBuildOptions();
 	SETTINGS_LoadCalibration();
+#ifdef ENABLE_FOXHUNT_TX
+	FOX_Init();
+#endif
 
 	RADIO_ConfigureChannel(0, VFO_CONFIGURE_RELOAD);
 	RADIO_ConfigureChannel(1, VFO_CONFIGURE_RELOAD);

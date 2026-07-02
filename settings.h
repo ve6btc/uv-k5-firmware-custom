@@ -252,6 +252,29 @@ typedef struct {
 	uint8_t               S0_LEVEL;
 	uint8_t               S9_LEVEL;
 #endif
+#ifdef ENABLE_FOXHUNT_TX
+	struct {
+		bool     enabled;       // beacon armed (restored at boot only when autostart is set)
+		bool     random;        // randomise the interval between interval_min and interval_max
+		bool     autostart;     // re-arm automatically after a power cycle / battery swap
+		bool     rx_off;        // keep the receiver asleep between beacons (deaf fox, max battery)
+		uint8_t  wpm;           // morse speed, 5 ~ 30 WPM
+		uint8_t  power;         // 1 ~ 10 power scale (4 = calibrated LOW, 7 = MID, 10 = HIGH)
+		uint8_t  power_var;     // random per-TX power swing, +/- 0 ~ 5 levels
+		uint16_t interval_min;  // seconds of silence between transmissions, 5 ~ 600
+		uint16_t interval_max;  // upper bound when random is enabled
+		uint32_t frequency;     // TX frequency in 10Hz units
+		uint16_t pitch_hz;      // CW tone pitch, 400 ~ 1200 Hz
+		uint16_t found_pitch_hz;// tone pitch in found mode (sounds different), 400 ~ 1200 Hz
+		uint8_t  found_repeat;  // FOUND announcements before standing down, 0 = keep going
+		uint16_t ctcss_hz;      // CTCSS_Options[] value in 0.1Hz units, 0 = none
+		uint8_t  dcs;           // 0 = none, 1..104 = DCS_Options[n-1] normal, 105..208 = inverted
+		uint8_t  tones_time;    // seconds of hi-lo hunt tones before the CW ID, 0 ~ 60
+		uint8_t  start_delay;   // minutes from arming to the first transmission, 0 ~ 120
+		uint16_t runtime_max;   // total run time limit in minutes, 0 = unlimited
+		char     message[24];   // beacon CW message (callsign), null terminated
+	} FOX;
+#endif
 } EEPROM_Config_t;
 
 extern EEPROM_Config_t gEeprom;

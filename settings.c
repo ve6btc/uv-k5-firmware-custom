@@ -38,6 +38,41 @@ static const uint32_t gDefaultFrequencyTable[] =
 
 EEPROM_Config_t gEeprom = { 0 };
 
+#ifdef ENABLE_FOXHUNT_TX
+	// on-EEPROM layout of the fox beacon config, stored at 0x1BD0..0x1BFF -
+	// the unused 48 byte gap between the channel name table and the DTMF
+	// contact list. the magic word tells first boot from saved config.
+	#define FOX_EEPROM_ADDR   0x1BD0
+	#define FOX_EEPROM_MAGIC  0x5846   // "FX"
+
+	#define FOX_FLAG_RANDOM     (1u << 0)
+	#define FOX_FLAG_AUTOSTART  (1u << 1)
+	#define FOX_FLAG_ENABLED    (1u << 2)   // armed when last saved (used with AUTOSTART)
+	#define FOX_FLAG_RXOFF      (1u << 3)
+
+	typedef struct {
+		uint16_t magic;
+		uint8_t  wpm;
+		uint8_t  power;
+		uint16_t interval_min;
+		uint16_t interval_max;
+		uint32_t frequency;
+		uint16_t pitch_hz;
+		uint8_t  ctcss_idx;      // 0 = none, 1..50 = CTCSS_Options index + 1
+		uint8_t  tones_time;
+		uint8_t  start_delay;
+		uint16_t runtime_max;
+		uint8_t  flags;
+		char     message[24];
+		uint8_t  power_var;
+		uint8_t  dcs;
+		uint8_t  found_pitch;    // in 10Hz units (40..120 = 400..1200Hz)
+		uint8_t  found_repeat;
+	} __attribute__((packed)) FOX_EepromCfg_t;
+
+	_Static_assert(sizeof(FOX_EepromCfg_t) == 48, "fox eeprom blob must be 48 bytes (6 x 8-byte pages)");
+#endif
+
 void SETTINGS_InitEEPROM(void)
 {
 	uint8_t Data[16] = {0};
@@ -274,9 +309,69 @@ void SETTINGS_InitEEPROM(void)
 		if (gCustomAesKey[i] != 0xFFFFFFFFu)
 		{
 			bHasCustomAesKey = true;
-			return;
+			break;
 		}
 	}
+
+#ifdef ENABLE_FOXHUNT_TX
+	{	// 1BD0..1BFF - fox beacon config (unused gap between the channel
+		// name table, which ends at 0x1BD0, and the DTMF contacts at 0x1C00)
+		FOX_EepromCfg_t fox;
+		EEPROM_ReadBuffer(FOX_EEPROM_ADDR, &fox, sizeof(fox));
+
+		if (fox.magic != FOX_EEPROM_MAGIC)
+		{	// never saved (or corrupt) - use defaults: ~15s of tones + CW ID
+			// repeating with a 15s pause, like a typical dedicated controller
+			memset(&fox, 0, sizeof(fox));
+			fox.wpm          = 20;
+			fox.power        = 4;          // = calibrated LOW on the 1..10 scale
+			fox.interval_min = 15;
+			fox.interval_max = 15;
+			fox.frequency    = 14656500;   // 146.565 MHz - the coordinated fox hunt frequency
+			fox.pitch_hz     = 600;
+			fox.tones_time   = 15;
+			fox.found_pitch  = 80;         // 800Hz - audibly different from the hunt tone
+			fox.found_repeat = 10;
+			strcpy(fox.message, "FOX");
+		}
+
+		gEeprom.FOX.random       = (fox.flags & FOX_FLAG_RANDOM)    != 0;
+		gEeprom.FOX.autostart    = (fox.flags & FOX_FLAG_AUTOSTART) != 0;
+		gEeprom.FOX.rx_off       = (fox.flags & FOX_FLAG_RXOFF)     != 0;
+		gEeprom.FOX.dcs          = (fox.dcs > 208) ? 0 : fox.dcs;
+		// re-arm at power-on only when the user explicitly opted in
+		gEeprom.FOX.enabled      = gEeprom.FOX.autostart && (fox.flags & FOX_FLAG_ENABLED) != 0;
+		gEeprom.FOX.wpm          = (fox.wpm < 5 || fox.wpm > 30) ? 20 : fox.wpm;
+		gEeprom.FOX.power        = (fox.power < 1 || fox.power > 10) ? 4 : fox.power;
+		gEeprom.FOX.power_var    = (fox.power_var > 5) ? 0 : fox.power_var;
+		gEeprom.FOX.interval_min = (fox.interval_min < 5 || fox.interval_min > 600) ? 15 : fox.interval_min;
+		gEeprom.FOX.interval_max = (fox.interval_max < gEeprom.FOX.interval_min || fox.interval_max > 600) ? gEeprom.FOX.interval_min : fox.interval_max;
+		gEeprom.FOX.frequency    = fox.frequency;
+		if ((gEeprom.FOX.frequency < 13600000 || gEeprom.FOX.frequency > 17400000) &&
+		    (gEeprom.FOX.frequency < 40000000 || gEeprom.FOX.frequency > 47000000))
+			gEeprom.FOX.frequency = 14656500;
+		gEeprom.FOX.pitch_hz     = (fox.pitch_hz < 400 || fox.pitch_hz > 1200) ? 600 : fox.pitch_hz;
+		gEeprom.FOX.found_pitch_hz = (fox.found_pitch < 40 || fox.found_pitch > 120) ? 800 : (uint16_t)fox.found_pitch * 10u;
+		gEeprom.FOX.found_repeat = (fox.found_repeat > 20) ? 10 : fox.found_repeat;
+		gEeprom.FOX.tones_time   = (fox.tones_time > 60) ? 15 : fox.tones_time;
+		gEeprom.FOX.start_delay  = (fox.start_delay > 120) ? 0 : fox.start_delay;
+		gEeprom.FOX.runtime_max  = (fox.runtime_max > 480) ? 0 : fox.runtime_max;
+
+		gEeprom.FOX.ctcss_hz = (fox.ctcss_idx >= 1 && fox.ctcss_idx <= ARRAY_SIZE(CTCSS_Options))
+		                       ? CTCSS_Options[fox.ctcss_idx - 1] : 0;
+
+		fox.message[sizeof(fox.message) - 1] = '\0';
+		for (unsigned int i = 0; fox.message[i] != '\0'; i++) {
+			if (fox.message[i] < ' ' || fox.message[i] > '~') {
+				fox.message[0] = '\0';   // garbage - drop it
+				break;
+			}
+		}
+		if (fox.message[0] == '\0')
+			strcpy(fox.message, "FOX");
+		memcpy(gEeprom.FOX.message, fox.message, sizeof(gEeprom.FOX.message));
+	}
+#endif
 }
 
 void SETTINGS_LoadCalibration(void)
@@ -592,6 +687,44 @@ void SETTINGS_SaveSettings(void)
 	State[7] = (State[7] & ~(3u << 6)) | ((gSetting_backlight_on_tx_rx & 3u) << 6);
 
 	EEPROM_WriteBuffer(0x0F40, State);
+
+#ifdef ENABLE_FOXHUNT_TX
+	{	// fox beacon config - all 48 bytes, 8 bytes per write
+		FOX_EepromCfg_t fox;
+		memset(&fox, 0, sizeof(fox));
+
+		fox.magic        = FOX_EEPROM_MAGIC;
+		fox.wpm          = gEeprom.FOX.wpm;
+		fox.power        = gEeprom.FOX.power;
+		fox.power_var    = gEeprom.FOX.power_var;
+		fox.interval_min = gEeprom.FOX.interval_min;
+		fox.interval_max = gEeprom.FOX.interval_max;
+		fox.frequency    = gEeprom.FOX.frequency;
+		fox.pitch_hz     = gEeprom.FOX.pitch_hz;
+		fox.found_pitch  = gEeprom.FOX.found_pitch_hz / 10;
+		fox.found_repeat = gEeprom.FOX.found_repeat;
+		fox.ctcss_idx    = 0;
+		for (unsigned int i = 0; i < ARRAY_SIZE(CTCSS_Options); i++) {
+			if (CTCSS_Options[i] == gEeprom.FOX.ctcss_hz) {
+				fox.ctcss_idx = i + 1;
+				break;
+			}
+		}
+		fox.tones_time   = gEeprom.FOX.tones_time;
+		fox.start_delay  = gEeprom.FOX.start_delay;
+		fox.runtime_max  = gEeprom.FOX.runtime_max;
+		fox.dcs          = gEeprom.FOX.dcs;
+		fox.flags        = (gEeprom.FOX.random    ? FOX_FLAG_RANDOM    : 0) |
+		                   (gEeprom.FOX.autostart ? FOX_FLAG_AUTOSTART : 0) |
+		                   (gEeprom.FOX.enabled   ? FOX_FLAG_ENABLED   : 0) |
+		                   (gEeprom.FOX.rx_off    ? FOX_FLAG_RXOFF     : 0);
+		memcpy(fox.message, gEeprom.FOX.message, sizeof(fox.message));
+		fox.message[sizeof(fox.message) - 1] = '\0';
+
+		for (unsigned int i = 0; i < sizeof(fox); i += 8)
+			EEPROM_WriteBuffer(FOX_EEPROM_ADDR + i, (const uint8_t *)&fox + i);
+	}
+#endif
 }
 
 void SETTINGS_SaveChannel(uint8_t Channel, uint8_t VFO, const VFO_Info_t *pVFO, uint8_t Mode)

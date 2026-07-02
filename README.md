@@ -120,6 +120,7 @@ You'll find the options at the top of "Makefile" ('0' = disable, '1' = enable) .
 | ENABLE_BYP_RAW_DEMODULATORS | additional BYP (bypass?) and RAW demodulation options, proved not to be very useful, but it is there if you want to experiment |
 | ENABLE_BLMIN_TMP_OFF | additional function for configurable buttons that toggles `BLMin` on and off wihout saving it to the EEPROM |
 | ENABLE_SCAN_RANGES | scan range mode for frequency scanning, see wiki for instructions (radio operation -> frequency scanning) |
+| ENABLE_FOXHUNT_TX | enable the built in fox-hunt CW beacon |
 |🧰 **DEBUGGING** ||
 | ENABLE_AM_FIX_SHOW_DATA| displays settings used by  AM-fix when AM transmission is received |
 | ENABLE_AGC_SHOW_DATA | displays AGC settings |
@@ -214,6 +215,120 @@ Many thanks to various people on Telegram for putting up with me during this eff
 
 [ludwich66 - Quansheng UV-K5 Wiki](https://github.com/ludwich66/Quansheng_UV-K5_Wiki/wiki)<br>
 [amnemonic - tools and sources of information](https://github.com/amnemonic/Quansheng_UV-K5_Firmware)
+
+## Fox hunt transmitter
+
+> **Ready-to-flash firmware:** grab `*.packed.bin` from the
+> [Releases page](../../releases) and flash it with the
+> [online flasher](https://egzumer.github.io/uvtools) - no build needed.
+
+This firmware can turn the radio into a **fox** - a hidden transmitter for
+amateur radio direction finding (foxhunts / T-hunts). Once armed, the radio
+transmits on a schedule all by itself: a period of easy-to-track hi-lo hunt
+tones, followed by your callsign in morse code, then silence until the next
+cycle - just like a dedicated fox controller, except it's also still your
+radio.
+
+### Quick start - hiding your first fox
+
+1. Press `MENU`, scroll to **FoxHnt**, press `MENU`. You are now in the fox menu.
+2. Set **Msg** to your callsign (see *entering the message* below).
+3. Set **Freq** to your hunt frequency (default is 146.565 MHz, the common
+   North American foxhunt frequency) - type 6 digits, e.g. `146565`.
+4. Set **Enable** to ON, then back out of the menu with `EXIT` `EXIT`.
+5. The screen switches to the dedicated fox display: the transmit
+   frequency, a countdown to the next transmission ("ON AIR" while it
+   transmits), your message, and the key hints. You have 10 seconds before the
+   first transmission - or set **StrDly** first and you could have up to
+   2 hours to hike out and hide it.
+6. Hide the radio. It will now transmit 15 seconds of tones + your callsign,
+   pause 15 seconds, and repeat - out of the box, no other settings needed.
+
+### While the fox is armed
+
+| You press | What happens |
+|---|---|
+| `EXIT` (main screen) | Beacon stops, even mid-transmission |
+| `PTT` | Beacon aborts instantly and you get your radio back |
+| `F` | Toggles **found** mode - the fox keeps transmitting but now sends `FOUND <your message>` at the FndTon pitch so it sounds different. After FndRpt announcements it stands down by itself. Press `F` again to undo. |
+
+The fox is polite: it will not transmit while you are listening to a signal,
+talking, scanning, sitting in the menu, or using the FM radio - it just waits
+and tries again a couple of seconds later.
+
+### The fox menu
+
+| Item | What it does | Range (default) |
+|---|---|---|
+| **Enable** | Arm / disarm the beacon | OFF (needs a message first) |
+| **Freq**   | Transmit frequency | 137-174 / 400-470 MHz (146.565) |
+| **Msg**    | The morse message - your callsign (A-Z, 0-9, space) | up to 23 characters |
+| **Speed**  | Morse speed | 5-30 WPM (20) |
+| **TxPwr**  | Transmit power on a 1-10 scale: 10 = full power (~5W), 7 = the radio's MID, 4 = LOW, and 1-3 go below LOW into milliwatt territory for close-in hunts | 1-10 (4) |
+| **PwrVar** | Each transmission randomly varies the power up/down by up to this many levels - makes signal-strength hunting trickier | OFF-5 (OFF) |
+| **Tones**  | Seconds of hi-lo hunt tones before the morse ID | 0-60 s (15) |
+| **Interv** | Silence between transmissions | 5-600 s (15) |
+| **IntMax** | Longest silence, when Random is ON | up to 600 s |
+| **Random** | Randomise each pause between Interv and IntMax - makes the fox harder to predict | OFF |
+| **StrDly** | Wait this long after arming before the first transmission - time to hide the fox and get away | 0-120 min (OFF = 10 s) |
+| **MaxRun** | The fox disarms itself after this long - no all-night transmitter if nobody finds it | 0-480 min (OFF = run forever) |
+| **AutoTx** | Stay armed through a power cycle / battery swap. With this OFF (the default) the fox always powers up silent. | OFF |
+| **RxOff**  | Keep the receiver asleep between transmissions - the fox is deaf while armed, but the battery lasts much longer. Works even with BatSav off. | OFF |
+| **Pitch**  | Tone pitch | 400-1200 Hz (600) |
+| **CTCSS**  | Sub-audible tone under the beacon, if you want it | OFF |
+| **DCS**    | Digital squelch code instead (normal then inverted codes) - setting one of CTCSS/DCS clears the other | OFF |
+| **FndTon** | Tone pitch used in found mode, so the "all over" message is audibly different | 400-1200 Hz (800) |
+| **FndRpt** | How many FOUND announcements before the fox stops itself (CONT = keep going until disarmed) | CONT-20 (10) |
+| **Found**  | Toggle found mode from the menu (same as the `F` key) | OFF |
+
+Tips:
+
+* A lower `TxPwr` makes a *harder* hunt and a longer battery life. The default
+  (4) matches the radio's LOW setting; try 1-2 for a small park.
+* 15s tones / 15s pause (the defaults) is the classic 50% duty cycle used by
+  commercial fox controllers. For a lazier fox, raise **Interv**.
+* Everything except *Enable* and *Found* is remembered across reboots.
+
+### Battery life
+
+Between transmissions the radio power-saves exactly as it normally does, so
+the standard settings apply - recommended for an all-day fox:
+
+* **RxOff** ON (fox menu) - the receiver stays fully asleep between beacons;
+  or **BatSav** `1:4` (main menu) if you want the radio to keep listening
+* The backlight handles itself: while the fox is armed it always goes fully
+  dark 10 seconds after it last lit (ignoring BLTime/BLMin - a hidden radio
+  must not glow). Pressing any key lights it back up.
+* **BLTime** `1 sec`, or **BLTxRx** OFF - the backlight is the silent battery
+  killer in a radio that transmits unattended
+* **TxPwr** as low as the hunt allows, and a modest **Interv** - transmit
+  time dominates consumption
+* **MaxRun** set to the hunt length, so a lost fox isn't still transmitting
+  at midnight
+
+### Entering the message
+
+Select **Msg**, press `MENU` to start editing, then:
+
+* `UP` / `DOWN` - change the current character (cycles space, A-Z, 0-9)
+* number keys - type digits directly
+* `MENU` - next character &nbsp;&nbsp; `*` - go back a character &nbsp;&nbsp; `F` - space
+* When you're done, press `MENU` until `SURE?` appears, then `MENU` once more
+  to save. `EXIT` abandons the edit.
+
+While editing, the message shows in large text with the character you are on
+highlighted as an inverted block. The `_` characters mean "not typed yet" -
+stepping past one with `MENU` turns it into a real space, and any left at the
+end disappear when you save. **A message is required before the fox will
+arm** (your licence requires the fox to identify, too).
+
+### Build notes
+
+The fox is included when `ENABLE_FOXHUNT_TX = 1` in the Makefile. It costs
+about 5 KB of flash, so the spectrum analyser (`ENABLE_SPECTRUM`) is turned
+off in this configuration - the two do not fit together in the radio's 60 KB
+flash. Build with `ENABLE_FOXHUNT_TX=0 ENABLE_SPECTRUM=1` to get the standard
+firmware back.
 
 ## License
 

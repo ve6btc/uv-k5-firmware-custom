@@ -36,6 +36,9 @@
 #include "ui/inputbox.h"
 #include "ui/main.h"
 #include "ui/ui.h"
+#ifdef ENABLE_FOXHUNT_TX
+	#include "app/fox.h"
+#endif
 
 center_line_t center_line = CENTER_LINE_NONE;
 
@@ -302,11 +305,46 @@ void UI_MAIN_TimeSlice500ms(void)
 
 // ***************************************************************************
 
+#ifdef ENABLE_FOXHUNT_TX
+static void DisplayFoxScreen(void)
+{	// dedicated screen while the fox is armed - no VFO/receiver clutter,
+	// just what someone walking up to the hidden radio needs to see
+	char String[22];
+
+	UI_DisplayClear();
+
+	UI_PrintStringSmallNormal(FOX_IsFoundMode() ? "FOX HUNT - FOUND" : "FOX HUNT", 0, 127, 0);
+
+	sprintf(String, "%3u.%05u", gEeprom.FOX.frequency / 100000, gEeprom.FOX.frequency % 100000);
+	UI_PrintString(String, 0, 127, 1, 10);
+
+	if (FOX_IsTxActive())
+		strcpy(String, "ON AIR");
+	else
+		sprintf(String, "NEXT TX %us", FOX_SecondsToNextTx());
+	UI_PrintStringSmallNormal(String, 0, 127, 4);
+
+	UI_PrintStringSmallNormal(gEeprom.FOX.message, 0, 127, 5);
+
+	UI_PrintStringSmallNormal("F=FOUND  EXIT=STOP", 0, 127, 6);
+
+	ST7565_BlitFullScreen();
+}
+#endif
+
 void UI_DisplayMain(void)
 {
 	char               String[22];
 
 	center_line = CENTER_LINE_NONE;
+
+#ifdef ENABLE_FOXHUNT_TX
+	if (FOX_IsEnabled())
+	{	// the fox owns the display while it is armed
+		DisplayFoxScreen();
+		return;
+	}
+#endif
 
 	// clear the screen
 	UI_DisplayClear();

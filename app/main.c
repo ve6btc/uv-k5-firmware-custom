@@ -23,6 +23,9 @@
 #ifdef ENABLE_FMRADIO
 	#include "app/fm.h"
 #endif
+#ifdef ENABLE_FOXHUNT_TX
+	#include "app/fox.h"
+#endif
 #include "app/generic.h"
 #include "app/main.h"
 #include "app/scanner.h"
@@ -419,6 +422,14 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 static void MAIN_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 {
+#ifdef ENABLE_FOXHUNT_TX
+	if (!bKeyHeld && bKeyPressed && FOX_IsEnabled()) {
+		// EXIT stops the fox beacon (aborting a transmission in progress)
+		FOX_Enable(false);
+		gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+		return;
+	}
+#endif
 	if (!bKeyHeld && bKeyPressed) { // exit key pressed
 		gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 

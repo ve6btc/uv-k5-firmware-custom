@@ -61,6 +61,9 @@
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
+#ifdef ENABLE_FOXHUNT_TX
+#include "app/fox.h"
+#endif
 
 #if defined(ENABLE_OVERLAY)
 	#include "sram-overlay.h"
@@ -896,7 +899,11 @@ void APP_Update(void)
 	if (gSchedulePowerSave) {
 		if (gPttIsPressed
 			|| gKeyBeingHeld
-			|| gEeprom.BATTERY_SAVE == 0
+			|| (gEeprom.BATTERY_SAVE == 0
+#ifdef ENABLE_FOXHUNT_TX
+			    && !FOX_RxSleepWanted()   // fox RxOff sleeps even with BatSav off
+#endif
+			   )
 			|| gScanStateDir != SCAN_OFF
 			|| gCssBackgroundScan
 			|| gScreenToDisplay != DISPLAY_MAIN
@@ -925,6 +932,13 @@ void APP_Update(void)
 	) {
 		static bool goToSleep;
 		// wake up, enable RX then go back to sleep
+#ifdef ENABLE_FOXHUNT_TX
+		if (gRxIdleMode && FOX_RxSleepWanted())
+		{	// fox RxOff - skip the periodic RX sniff, stay asleep
+			gPowerSave_10ms = 100;   // recheck once a second
+		}
+		else
+#endif
 		if (gRxIdleMode)
 		{
 			BK4819_Conditional_RX_TurnOn_and_GPIO6_Enable();
@@ -1112,6 +1126,10 @@ void APP_TimeSlice10ms(void)
 
 	if (gReducedService)
 		return;
+
+#ifdef ENABLE_FOXHUNT_TX
+	FOX_TimeSlice10ms();
+#endif
 
 	if (gCurrentFunction != FUNCTION_POWER_SAVE || !gRxIdleMode)
 		CheckRadioInterrupts();

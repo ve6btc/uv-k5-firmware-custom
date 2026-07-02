@@ -18,7 +18,9 @@ ENABLE_FLASHLIGHT             ?= 1
 
 # ---- CUSTOM MODS ----
 ENABLE_BIG_FREQ               ?= 1
-ENABLE_SMALL_BOLD             ?= 1
+# the bold small font is disabled to make room for the fox hunt beacon
+# (menus fall back to the normal small font)
+ENABLE_SMALL_BOLD             ?= 0
 ENABLE_CUSTOM_MENU_LAYOUT     ?= 1
 ENABLE_KEEP_MEM_NAME          ?= 1
 ENABLE_WIDE_RX                ?= 1
@@ -35,11 +37,15 @@ ENABLE_FASTER_CHANNEL_SCAN    ?= 1
 ENABLE_RSSI_BAR               ?= 1
 ENABLE_AUDIO_BAR              ?= 1
 ENABLE_COPY_CHAN_TO_VFO       ?= 1
-ENABLE_SPECTRUM               ?= 1
+# spectrum is disabled to make room for the fox hunt beacon (ENABLE_FOXHUNT_TX)
+# - the two together do not fit in the 60KB flash. set this back to 1 if you
+# build with ENABLE_FOXHUNT_TX=0 and want the spectrum analyser instead.
+ENABLE_SPECTRUM               ?= 0
 ENABLE_REDUCE_LOW_MID_TX_POWER?= 0
 ENABLE_BYP_RAW_DEMODULATORS   ?= 0
 ENABLE_BLMIN_TMP_OFF          ?= 0
 ENABLE_SCAN_RANGES            ?= 1
+ENABLE_FOXHUNT_TX             ?= 1
 
 # ---- DEBUGGING ----
 ENABLE_AM_FIX_SHOW_DATA       ?= 0
@@ -121,6 +127,9 @@ ifeq ($(ENABLE_FLASHLIGHT),1)
 endif
 ifeq ($(ENABLE_FMRADIO),1)
 	OBJS += app/fm.o
+endif
+ifeq ($(ENABLE_FOXHUNT_TX),1)
+	OBJS += app/fox.o
 endif
 OBJS += app/generic.o
 OBJS += app/main.o
@@ -361,6 +370,9 @@ ifeq ($(ENABLE_BLMIN_TMP_OFF),1)
 endif
 ifeq ($(ENABLE_SCAN_RANGES),1)
 	CFLAGS  += -DENABLE_SCAN_RANGES
+endif
+ifeq ($(ENABLE_FOXHUNT_TX),1)
+	CFLAGS  += -DENABLE_FOXHUNT_TX
 endif
 ifeq ($(ENABLE_DTMF_CALLING),1)
 	CFLAGS  += -DENABLE_DTMF_CALLING

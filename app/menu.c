@@ -20,6 +20,9 @@
 	#include "ARMCM0.h"
 #endif
 #include "app/dtmf.h"
+#ifdef ENABLE_FOXHUNT_TX
+	#include "app/fox.h"
+#endif
 #include "app/generic.h"
 #include "app/menu.h"
 #include "app/scanner.h"
@@ -47,6 +50,20 @@
 #endif
 
 uint8_t gUnlockAllTxConfCnt;
+
+#ifdef ENABLE_FOXHUNT_TX
+	// the name/message edit box is shared between the channel name (10
+	// characters) and the fox message (23 characters)
+	static int get_edit_max_len(void)
+	{
+		return (UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG) ? (int)sizeof(gEeprom.FOX.message) - 1 : 10;
+	}
+#else
+	static int get_edit_max_len(void)
+	{
+		return 10;
+	}
+#endif
 
 #ifdef ENABLE_F_CAL_MENU
 	void writeXtalFreqCal(const int32_t value, const bool update_eeprom)
@@ -362,6 +379,84 @@ int MENU_GetLimits(uint8_t menu_id, int32_t *pMin, int32_t *pMax)
 			*pMin = 0;
 			*pMax = gSubMenu_SIDEFUNCTIONS_size-1;
 			break;
+
+#ifdef ENABLE_FOXHUNT_TX
+		case MENU_FOX_EN:
+		case MENU_FOX_RANDOM:
+		case MENU_FOX_AUTO:
+		case MENU_FOX_RXOFF:
+		case MENU_FOX_FOUND:
+			*pMin = 0;
+			*pMax = 1;
+			break;
+
+		case MENU_FOX_WPM:
+			*pMin = 5;
+			*pMax = 30;
+			break;
+
+		case MENU_FOX_PWR:
+			*pMin = 1;
+			*pMax = 10;
+			break;
+
+		case MENU_FOX_PWR_VAR:
+			*pMin = 0;
+			*pMax = 5;
+			break;
+
+		case MENU_FOX_INTMIN:
+		case MENU_FOX_INTMAX:
+			*pMin = 5;
+			*pMax = 600;
+			break;
+
+		case MENU_FOX_PITCH:
+		case MENU_FOX_FND_TONE:
+			*pMin = 400;
+			*pMax = 1200;
+			break;
+
+		case MENU_FOX_FND_RPT:
+			*pMin = 0;
+			*pMax = 20;
+			break;
+
+		case MENU_FOX_FREQ:
+			*pMin = frequencyBandTable[BAND3_137MHz].lower;
+			*pMax = frequencyBandTable[BAND6_400MHz].upper;
+			break;
+
+		case MENU_FOX_TONE:
+			*pMin = 0;
+			*pMax = ARRAY_SIZE(CTCSS_Options);   // 0 = none, 1..n = CTCSS_Options[n - 1]
+			break;
+
+		case MENU_FOX_DCS:
+			*pMin = 0;
+			*pMax = 2 * ARRAY_SIZE(DCS_Options); // 0 = none, then normal, then inverted
+			break;
+
+		case MENU_FOX_TONES:
+			*pMin = 0;
+			*pMax = 60;
+			break;
+
+		case MENU_FOX_DELAY:
+			*pMin = 0;
+			*pMax = 120;
+			break;
+
+		case MENU_FOX_RUNTIME:
+			*pMin = 0;
+			*pMax = 480;
+			break;
+
+		case MENU_FOX_MSG:
+			*pMin = 0;
+			*pMax = 0;
+			break;
+#endif
 
 		default:
 			return -1;
@@ -797,6 +892,110 @@ void MENU_AcceptSetting(void)
 			}
 			break;
 
+#ifdef ENABLE_FOXHUNT_TX
+		case MENU_FOX_EN:
+			if (gSubMenuSelection && gEeprom.FOX.message[0] == '\0')
+			{	// refuse to arm with no message
+				gSubMenuSelection = 0;
+				gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+			}
+			FOX_Enable(gSubMenuSelection != 0);
+			break;
+
+		case MENU_FOX_WPM:
+			gEeprom.FOX.wpm = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_PWR:
+			gEeprom.FOX.power = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_PWR_VAR:
+			gEeprom.FOX.power_var = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_INTMIN:
+			gEeprom.FOX.interval_min = gSubMenuSelection;
+			if (gEeprom.FOX.interval_max < gEeprom.FOX.interval_min)
+				gEeprom.FOX.interval_max = gEeprom.FOX.interval_min;
+			break;
+
+		case MENU_FOX_INTMAX:
+			gEeprom.FOX.interval_max = gSubMenuSelection;
+			if (gEeprom.FOX.interval_min > gEeprom.FOX.interval_max)
+				gEeprom.FOX.interval_min = gEeprom.FOX.interval_max;
+			break;
+
+		case MENU_FOX_RANDOM:
+			gEeprom.FOX.random = (gSubMenuSelection != 0);
+			break;
+
+		case MENU_FOX_MSG:
+		{	// strip the '_' editing padding and any trailing spaces
+			int len = (int)sizeof(gEeprom.FOX.message) - 1;
+			memcpy(gEeprom.FOX.message, edit, len);
+			gEeprom.FOX.message[len] = '\0';
+			while (len > 0 && (gEeprom.FOX.message[len - 1] == '_' || gEeprom.FOX.message[len - 1] == ' ' || gEeprom.FOX.message[len - 1] == '\0'))
+				gEeprom.FOX.message[--len] = '\0';
+			for (int i = 0; i < len; i++)
+				if (gEeprom.FOX.message[i] == '_')
+					gEeprom.FOX.message[i] = ' ';
+			break;
+		}
+
+		case MENU_FOX_PITCH:
+			gEeprom.FOX.pitch_hz = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_FND_TONE:
+			gEeprom.FOX.found_pitch_hz = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_FND_RPT:
+			gEeprom.FOX.found_repeat = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_FREQ:
+			gEeprom.FOX.frequency = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_TONE:
+			gEeprom.FOX.ctcss_hz = (gSubMenuSelection == 0) ? 0 : CTCSS_Options[gSubMenuSelection - 1];
+			if (gEeprom.FOX.ctcss_hz != 0)
+				gEeprom.FOX.dcs = 0;         // CTCSS and DCS are mutually exclusive
+			break;
+
+		case MENU_FOX_DCS:
+			gEeprom.FOX.dcs = gSubMenuSelection;
+			if (gEeprom.FOX.dcs != 0)
+				gEeprom.FOX.ctcss_hz = 0;    // CTCSS and DCS are mutually exclusive
+			break;
+
+		case MENU_FOX_RXOFF:
+			gEeprom.FOX.rx_off = (gSubMenuSelection != 0);
+			break;
+
+		case MENU_FOX_TONES:
+			gEeprom.FOX.tones_time = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_DELAY:
+			gEeprom.FOX.start_delay = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_RUNTIME:
+			gEeprom.FOX.runtime_max = gSubMenuSelection;
+			break;
+
+		case MENU_FOX_AUTO:
+			gEeprom.FOX.autostart = (gSubMenuSelection != 0);
+			break;
+
+		case MENU_FOX_FOUND:
+			if ((gSubMenuSelection != 0) != FOX_IsFoundMode())
+				FOX_ToggleFound();
+			return;   // runtime state only - nothing to save
+#endif
 	}
 
 	gRequestSaveSettings = true;
@@ -1158,6 +1357,94 @@ void MENU_ShowCurrentSetting(void)
 			break;
 		}
 
+#ifdef ENABLE_FOXHUNT_TX
+		case MENU_FOX_EN:
+			gSubMenuSelection = gEeprom.FOX.enabled;
+			break;
+
+		case MENU_FOX_WPM:
+			gSubMenuSelection = gEeprom.FOX.wpm;
+			break;
+
+		case MENU_FOX_PWR:
+			gSubMenuSelection = gEeprom.FOX.power;
+			break;
+
+		case MENU_FOX_PWR_VAR:
+			gSubMenuSelection = gEeprom.FOX.power_var;
+			break;
+
+		case MENU_FOX_INTMIN:
+			gSubMenuSelection = gEeprom.FOX.interval_min;
+			break;
+
+		case MENU_FOX_INTMAX:
+			gSubMenuSelection = gEeprom.FOX.interval_max;
+			break;
+
+		case MENU_FOX_RANDOM:
+			gSubMenuSelection = gEeprom.FOX.random;
+			break;
+
+		case MENU_FOX_MSG:
+			gSubMenuSelection = 0;
+			break;
+
+		case MENU_FOX_PITCH:
+			gSubMenuSelection = gEeprom.FOX.pitch_hz;
+			break;
+
+		case MENU_FOX_FND_TONE:
+			gSubMenuSelection = gEeprom.FOX.found_pitch_hz;
+			break;
+
+		case MENU_FOX_FND_RPT:
+			gSubMenuSelection = gEeprom.FOX.found_repeat;
+			break;
+
+		case MENU_FOX_FREQ:
+			gSubMenuSelection = gEeprom.FOX.frequency;
+			break;
+
+		case MENU_FOX_TONE:
+			gSubMenuSelection = 0;
+			for (unsigned int i = 0; i < ARRAY_SIZE(CTCSS_Options); i++) {
+				if (CTCSS_Options[i] == gEeprom.FOX.ctcss_hz) {
+					gSubMenuSelection = i + 1;
+					break;
+				}
+			}
+			break;
+
+		case MENU_FOX_DCS:
+			gSubMenuSelection = gEeprom.FOX.dcs;
+			break;
+
+		case MENU_FOX_RXOFF:
+			gSubMenuSelection = gEeprom.FOX.rx_off;
+			break;
+
+		case MENU_FOX_TONES:
+			gSubMenuSelection = gEeprom.FOX.tones_time;
+			break;
+
+		case MENU_FOX_DELAY:
+			gSubMenuSelection = gEeprom.FOX.start_delay;
+			break;
+
+		case MENU_FOX_RUNTIME:
+			gSubMenuSelection = gEeprom.FOX.runtime_max;
+			break;
+
+		case MENU_FOX_AUTO:
+			gSubMenuSelection = gEeprom.FOX.autostart;
+			break;
+
+		case MENU_FOX_FOUND:
+			gSubMenuSelection = FOX_IsFoundMode();
+			break;
+#endif
+
 		default:
 			return;
 	}
@@ -1175,16 +1462,20 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 
 	gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
-	{	// currently editing the channel name
+	if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME
+#ifdef ENABLE_FOXHUNT_TX
+	     || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG
+#endif
+	    ) && edit_index >= 0)
+	{	// currently editing the channel name / fox message
 
-		if (edit_index < 10)
+		if (edit_index < get_edit_max_len())
 		{
 			if (Key <= KEY_9)
 			{
 				edit[edit_index] = '0' + Key - KEY_0;
 
-				if (++edit_index >= 10)
+				if (++edit_index >= get_edit_max_len())
 				{	// exit edit
 					gFlagAcceptSetting  = false;
 					gAskForConfirmation = 1;
@@ -1202,19 +1493,29 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 	gRequestDisplayScreen = DISPLAY_MENU;
 
 	if (!gIsInSubMenu) {
+#ifdef ENABLE_FOXHUNT_TX
+		const unsigned int listCount = gInFoxMenu ? gFoxMenuListCount : gMenuListCount;
+#else
+		const unsigned int listCount = gMenuListCount;
+#endif
 		switch (gInputBoxIndex) {
 			case 2:
 				gInputBoxIndex = 0;
 
 				Value = (gInputBox[0] * 10) + gInputBox[1];
 
-				if (Value > 0 && Value <= gMenuListCount) {
+				if (Value > 0 && Value <= listCount) {
+#ifdef ENABLE_FOXHUNT_TX
+					if (gInFoxMenu)
+						gFoxMenuCursor = Value - 1;
+					else
+#endif
 					gMenuCursor         = Value - 1;
 					gFlagRefreshSetting = true;
 					return;
 				}
 
-				if (Value <= gMenuListCount)
+				if (Value <= listCount)
 					break;
 
 				gInputBox[0]   = gInputBox[1];
@@ -1222,7 +1523,12 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 				[[fallthrough]];
 			case 1:
 				Value = gInputBox[0];
-				if (Value > 0 && Value <= gMenuListCount) {
+				if (Value > 0 && Value <= listCount) {
+#ifdef ENABLE_FOXHUNT_TX
+					if (gInFoxMenu)
+						gFoxMenuCursor = Value - 1;
+					else
+#endif
 					gMenuCursor         = Value - 1;
 					gFlagRefreshSetting = true;
 					return;
@@ -1236,7 +1542,11 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		return;
 	}
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET) {
+	if (UI_MENU_GetCurrentMenuId() == MENU_OFFSET
+#ifdef ENABLE_FOXHUNT_TX
+	    || UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ
+#endif
+	   ) {
 		uint32_t Frequency;
 
 		if (gInputBoxIndex < 6) { // invalid frequency
@@ -1251,6 +1561,25 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 #endif
 
 		Frequency = StrToUL(INPUTBOX_GetAscii())*100;
+
+#ifdef ENABLE_FOXHUNT_TX
+		if (UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ)
+		{	// keep the entered frequency exact, but keep it inside the TX bands
+			if (Frequency < frequencyBandTable[BAND3_137MHz].lower)
+				Frequency = frequencyBandTable[BAND3_137MHz].lower;
+			else if (Frequency > frequencyBandTable[BAND3_137MHz].upper &&
+			         Frequency < frequencyBandTable[BAND6_400MHz].lower)
+				Frequency = (Frequency - frequencyBandTable[BAND3_137MHz].upper <
+				             frequencyBandTable[BAND6_400MHz].lower - Frequency)
+				            ? frequencyBandTable[BAND3_137MHz].upper
+				            : frequencyBandTable[BAND6_400MHz].lower;
+			else if (Frequency > frequencyBandTable[BAND6_400MHz].upper)
+				Frequency = frequencyBandTable[BAND6_400MHz].upper;
+
+			gSubMenuSelection = Frequency;
+		}
+		else
+#endif
 		gSubMenuSelection = FREQUENCY_RoundToStep(Frequency, gTxVfo->StepFrequency);
 
 		gInputBoxIndex = 0;
@@ -1293,7 +1622,7 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		return;
 	}
 
-	Offset = (Max >= 100) ? 3 : (Max >= 10) ? 2 : 1;
+	Offset = (Max >= 1000) ? 4 : (Max >= 100) ? 3 : (Max >= 10) ? 2 : 1;
 
 	switch (gInputBoxIndex) {
 		case 1:
@@ -1305,12 +1634,15 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 		case 3:
 			Value = (gInputBox[0] * 100) + (gInputBox[1] * 10) + gInputBox[2];
 			break;
+		case 4:
+			Value = (gInputBox[0] * 1000) + (gInputBox[1] * 100) + (gInputBox[2] * 10) + gInputBox[3];
+			break;
 	}
 
 	if (Offset == gInputBoxIndex)
 		gInputBoxIndex = 0;
 
-	if (Value <= Max) {
+	if (Value >= Min && Value <= Max) {
 		gSubMenuSelection = Value;
 		return;
 	}
@@ -1333,12 +1665,17 @@ static void MENU_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 
 		if (gIsInSubMenu)
 		{
-			if (gInputBoxIndex == 0 || UI_MENU_GetCurrentMenuId() != MENU_OFFSET)
+			if (gInputBoxIndex == 0 || (UI_MENU_GetCurrentMenuId() != MENU_OFFSET
+#ifdef ENABLE_FOXHUNT_TX
+			                            && UI_MENU_GetCurrentMenuId() != MENU_FOX_FREQ
+#endif
+			   ))
 			{
 				gAskForConfirmation = 0;
 				gIsInSubMenu        = false;
 				gInputBoxIndex      = 0;
 				gFlagRefreshSetting = true;
+				edit_index          = -1;   // abandon any in-progress name/message edit
 
 				#ifdef ENABLE_VOICE
 					gAnotherVoiceID = VOICE_ID_CANCEL;
@@ -1352,6 +1689,18 @@ static void MENU_Key_EXIT(bool bKeyPressed, bool bKeyHeld)
 			gRequestDisplayScreen = DISPLAY_MENU;
 			return;
 		}
+
+#ifdef ENABLE_FOXHUNT_TX
+		if (gInFoxMenu)
+		{	// step back out of the fox sub menu to the main menu list
+			gInFoxMenu          = false;
+			gInputBoxIndex      = 0;
+			gFlagRefreshSetting = true;
+
+			gRequestDisplayScreen = DISPLAY_MENU;
+			return;
+		}
+#endif
 
 		#ifdef ENABLE_VOICE
 			gAnotherVoiceID = VOICE_ID_CANCEL;
@@ -1388,13 +1737,23 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 
 	if (!gIsInSubMenu)
 	{
+#ifdef ENABLE_FOXHUNT_TX
+		if (UI_MENU_GetCurrentMenuId() == MENU_FOX_MENU)
+		{	// open the fox sub menu
+			gInFoxMenu          = true;
+			gFoxMenuCursor      = 0;
+			gInputBoxIndex      = 0;
+			gFlagRefreshSetting = true;
+			return;
+		}
+#endif
 		#ifdef ENABLE_VOICE
 			if (UI_MENU_GetCurrentMenuId() != MENU_SCR)
 				gAnotherVoiceID = MenuList[gMenuCursor].voice_id;
 		#endif
-        if (UI_MENU_GetCurrentMenuId() == MENU_UPCODE 
-			|| UI_MENU_GetCurrentMenuId() == MENU_DWCODE 
-#ifdef ENABLE_DTMF_CALLING 
+        if (UI_MENU_GetCurrentMenuId() == MENU_UPCODE
+			|| UI_MENU_GetCurrentMenuId() == MENU_DWCODE
+#ifdef ENABLE_DTMF_CALLING
 			|| UI_MENU_GetCurrentMenuId() == MENU_ANI_ID
 #endif
 			)
@@ -1417,18 +1776,32 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 		return;
 	}
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
+	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME
+#ifdef ENABLE_FOXHUNT_TX
+	    || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG
+#endif
+	   )
 	{
 		if (edit_index < 0)
-		{	// enter channel name edit mode
-			if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
-				return;
+		{	// enter channel name / fox message edit mode
+			if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
+			{
+				if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
+					return;
 
-			SETTINGS_FetchChannelName(edit, gSubMenuSelection);
+				SETTINGS_FetchChannelName(edit, gSubMenuSelection);
+			}
+#ifdef ENABLE_FOXHUNT_TX
+			else
+			{
+				memset(edit, 0, sizeof(edit));
+				memcpy(edit, gEeprom.FOX.message, sizeof(gEeprom.FOX.message) - 1);
+			}
+#endif
 
-			// pad the channel name out with '_'
+			// pad the text out with '_'
 			edit_index = strlen(edit);
-			while (edit_index < 10)
+			while (edit_index < get_edit_max_len())
 				edit[edit_index++] = '_';
 			edit[edit_index] = 0;
 			edit_index = 0;  // 'edit_index' is going to be used as the cursor position
@@ -1439,10 +1812,17 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 			return;
 		}
 		else
-		if (edit_index >= 0 && edit_index < 10)
+		if (edit_index >= 0 && edit_index < get_edit_max_len())
 		{	// editing the channel name characters
 
-			if (++edit_index < 10)
+#ifdef ENABLE_FOXHUNT_TX
+			// skipping over an empty cell leaves a real space, so MENU and
+			// the F key behave the same on blanks ('_' = not yet entered)
+			if (UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG && edit[edit_index] == '_')
+				edit[edit_index] = ' ';
+#endif
+
+			if (++edit_index < get_edit_max_len())
 				return;	// next char
 
 			// exit
@@ -1462,6 +1842,9 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld)
 		if (UI_MENU_GetCurrentMenuId() == MENU_RESET  ||
 			UI_MENU_GetCurrentMenuId() == MENU_MEM_CH ||
 			UI_MENU_GetCurrentMenuId() == MENU_DEL_CH ||
+#ifdef ENABLE_FOXHUNT_TX
+			UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG ||
+#endif
 			UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME)
 		{
 			switch (gAskForConfirmation)
@@ -1522,14 +1905,31 @@ static void MENU_Key_STAR(const bool bKeyPressed, const bool bKeyHeld)
 
 	gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
-	{	// currently editing the channel name
+	if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME
+#ifdef ENABLE_FOXHUNT_TX
+	     || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG
+#endif
+	    ) && edit_index >= 0)
+	{	// currently editing the channel name / fox message
 
-		if (edit_index < 10)
+#ifdef ENABLE_FOXHUNT_TX
+		if (UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG)
+		{	// '*' steps the cursor back so mistakes can be fixed in place
+			if (edit_index > 0)
+			{
+				edit_index--;
+				gAskForConfirmation   = 0;   // back out of a pending SURE? too
+				gRequestDisplayScreen = DISPLAY_MENU;
+			}
+			return;
+		}
+#endif
+
+		if (edit_index < get_edit_max_len())
 		{
 			edit[edit_index] = '-';
 
-			if (++edit_index >= 10)
+			if (++edit_index >= get_edit_max_len())
 			{	// exit edit
 				gFlagAcceptSetting  = false;
 				gAskForConfirmation = 1;
@@ -1570,10 +1970,37 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 	uint8_t Channel;
 	bool    bCheckScanList;
 
-	if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && gIsInSubMenu && edit_index >= 0)
+	if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME
+#ifdef ENABLE_FOXHUNT_TX
+	     || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG
+#endif
+	    ) && gIsInSubMenu && edit_index >= 0)
 	{	// change the character
-		if (bKeyPressed && edit_index < 10 && Direction != 0)
+		if (bKeyPressed && edit_index < get_edit_max_len() && Direction != 0)
 		{
+#ifdef ENABLE_FOXHUNT_TX
+			if (UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG)
+			{	// keep the fox message simple: space, A-Z, 0-9 - nothing else
+				const char c = edit[edit_index];
+				int idx;
+
+				if (c >= 'A' && c <= 'Z')
+					idx = 1 + (c - 'A');
+				else if (c >= '0' && c <= '9')
+					idx = 27 + (c - '0');
+				else
+					idx = 0;                 // space / '_' padding / anything else
+
+				idx = (idx + Direction + 37) % 37;
+
+				edit[edit_index] = (idx == 0) ? ' ' :
+				                   (idx <= 26) ? (char)('A' + idx - 1) :
+				                                 (char)('0' + idx - 27);
+
+				gRequestDisplayScreen = DISPLAY_MENU;
+				return;
+			}
+#endif
 			const char   unwanted[] = "$%&!\"':;?^`|{}";
 			char         c          = edit[edit_index] + Direction;
 			unsigned int i          = 0;
@@ -1608,6 +2035,16 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 		return;
 
 	if (!gIsInSubMenu) {
+#ifdef ENABLE_FOXHUNT_TX
+		if (gInFoxMenu)
+		{	// move within the fox sub menu list
+			gFoxMenuCursor = NUMBER_AddWithWraparound(gFoxMenuCursor, -Direction, 0, gFoxMenuListCount - 1);
+
+			gFlagRefreshSetting   = true;
+			gRequestDisplayScreen = DISPLAY_MENU;
+			return;
+		}
+#endif
 		gMenuCursor = NUMBER_AddWithWraparound(gMenuCursor, -Direction, 0, gMenuListCount - 1);
 
 		gFlagRefreshSetting = true;
@@ -1638,6 +2075,39 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction)
 		gRequestDisplayScreen = DISPLAY_MENU;
 		return;
 	}
+
+#ifdef ENABLE_FOXHUNT_TX
+	if (UI_MENU_GetCurrentMenuId() == MENU_FOX_FREQ)
+	{	// step the fox frequency by the current VFO step, skipping the band gap
+		int32_t freq = (Direction * (int32_t)gTxVfo->StepFrequency) + gSubMenuSelection;
+
+		if (freq < (int32_t)frequencyBandTable[BAND3_137MHz].lower)
+			freq = frequencyBandTable[BAND3_137MHz].lower;
+		else if (freq > (int32_t)frequencyBandTable[BAND3_137MHz].upper &&
+		         freq < (int32_t)frequencyBandTable[BAND6_400MHz].lower)
+			freq = (Direction > 0) ? (int32_t)frequencyBandTable[BAND6_400MHz].lower
+			                       : (int32_t)frequencyBandTable[BAND3_137MHz].upper;
+		else if (freq > (int32_t)frequencyBandTable[BAND6_400MHz].upper)
+			freq = frequencyBandTable[BAND6_400MHz].upper;
+
+		gSubMenuSelection     = freq;
+		gRequestDisplayScreen = DISPLAY_MENU;
+		return;
+	}
+
+	if (UI_MENU_GetCurrentMenuId() == MENU_FOX_PITCH ||
+	    UI_MENU_GetCurrentMenuId() == MENU_FOX_FND_TONE)
+	{	// 25Hz steps - 1Hz steps across a 800Hz range would take forever
+		int32_t pitch = gSubMenuSelection + (Direction * 25);
+		if (pitch < 400)
+			pitch = 1200;
+		else if (pitch > 1200)
+			pitch = 400;
+		gSubMenuSelection     = pitch;
+		gRequestDisplayScreen = DISPLAY_MENU;
+		return;
+	}
+#endif
 
 	VFO = 0;
 
@@ -1691,15 +2161,19 @@ void MENU_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 			MENU_Key_STAR(bKeyPressed, bKeyHeld);
 			break;
 		case KEY_F:
-			if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0)
-			{	// currently editing the channel name
+			if ((UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME
+#ifdef ENABLE_FOXHUNT_TX
+			     || UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG
+#endif
+			    ) && edit_index >= 0)
+			{	// currently editing the channel name / fox message
 				if (!bKeyHeld && bKeyPressed)
 				{
 					gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
-					if (edit_index < 10)
+					if (edit_index < get_edit_max_len())
 					{
 						edit[edit_index] = ' ';
-						if (++edit_index >= 10)
+						if (++edit_index >= get_edit_max_len())
 						{	// exit edit
 							gFlagAcceptSetting  = false;
 							gAskForConfirmation = 1;

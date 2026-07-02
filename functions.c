@@ -33,6 +33,9 @@
 #include "driver/st7565.h"
 #include "frequencies.h"
 #include "functions.h"
+#ifdef ENABLE_FOXHUNT_TX
+	#include "app/fox.h"
+#endif
 #include "helper/battery.h"
 #include "misc.h"
 #include "radio.h"
@@ -149,6 +152,21 @@ void FUNCTION_Transmit()
 	// clear the DTMF RX live decoder buffer
 	gDTMF_RX_live_timeout = 0;
 	memset(gDTMF_RX_live, 0, sizeof(gDTMF_RX_live));
+
+#ifdef ENABLE_FOXHUNT_TX
+	if (FOX_IsTxActive())
+	{	// fox beacon transmission - key up on the fox frequency with no
+		// voice-TX chrome (no DTMF PTT ID, roger beep, Apollo tone or scrambler)
+		gUpdateStatus = true;
+		GUI_DisplayScreen();
+
+		FOX_SetupTx();
+
+		// turn the RED LED on
+		BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true);
+		return;
+	}
+#endif
 
 #if defined(ENABLE_FMRADIO)
 	if (gFmRadioMode)

@@ -123,6 +123,9 @@ const t_menu_item MenuList[] =
 	{"BatVol", VOICE_ID_INVALID,                       MENU_VOL           }, // was "VOL"
 	{"RxMode", VOICE_ID_DUAL_STANDBY,                  MENU_TDR           },
 	{"Sql",    VOICE_ID_SQUELCH,                       MENU_SQL           },
+#ifdef ENABLE_FOXHUNT_TX
+	{"FoxHnt", VOICE_ID_INVALID,                       MENU_FOX_MENU      }, // opens the fox beacon sub menu
+#endif
 
 	// hidden menu items from here on
 	// enabled if pressing both the PTT and upper side button at power-on
@@ -143,6 +146,38 @@ const t_menu_item MenuList[] =
 };
 
 const uint8_t FIRST_HIDDEN_MENU_ITEM = MENU_F_LOCK;
+
+#ifdef ENABLE_FOXHUNT_TX
+// fox beacon sub menu - a separate list so the main menu machinery
+// (counting, digit-jump, hidden-item handling) never sees these items
+const t_menu_item gFoxMenuList[] =
+{
+	{"Enable", VOICE_ID_INVALID,                       MENU_FOX_EN        }, // arm/disarm the beacon
+	{"Freq",   VOICE_ID_INVALID,                       MENU_FOX_FREQ      }, // transmit frequency
+	{"Msg",    VOICE_ID_INVALID,                       MENU_FOX_MSG       }, // CW message (callsign)
+	{"Speed",  VOICE_ID_INVALID,                       MENU_FOX_WPM       }, // morse speed
+	{"TxPwr",  VOICE_ID_INVALID,                       MENU_FOX_PWR       }, // transmit power, 1..10 scale
+	{"PwrVar", VOICE_ID_INVALID,                       MENU_FOX_PWR_VAR   }, // random per-TX power swing
+	{"Tones",  VOICE_ID_INVALID,                       MENU_FOX_TONES     }, // hunt tone seconds before the CW ID
+	{"Interv", VOICE_ID_INVALID,                       MENU_FOX_INTMIN    }, // silence between transmissions
+	{"IntMax", VOICE_ID_INVALID,                       MENU_FOX_INTMAX    }, // upper bound when Random is on
+	{"Random", VOICE_ID_INVALID,                       MENU_FOX_RANDOM    }, // randomise the interval
+	{"StrDly", VOICE_ID_INVALID,                       MENU_FOX_DELAY     }, // minutes before the first TX
+	{"MaxRun", VOICE_ID_INVALID,                       MENU_FOX_RUNTIME   }, // auto-stop after this many minutes
+	{"AutoTx", VOICE_ID_INVALID,                       MENU_FOX_AUTO      }, // stay armed across a power cycle
+	{"RxOff",  VOICE_ID_INVALID,                       MENU_FOX_RXOFF     }, // receiver asleep between beacons
+	{"Pitch",  VOICE_ID_INVALID,                       MENU_FOX_PITCH     }, // tone pitch
+	{"CTCSS",  VOICE_ID_INVALID,                       MENU_FOX_TONE      }, // optional sub-audible tone
+	{"DCS",    VOICE_ID_INVALID,                       MENU_FOX_DCS       }, // optional digital squelch code
+	{"FndTon", VOICE_ID_INVALID,                       MENU_FOX_FND_TONE  }, // tone pitch in found mode
+	{"FndRpt", VOICE_ID_INVALID,                       MENU_FOX_FND_RPT   }, // FOUND announcements before stopping
+	{"Found",  VOICE_ID_INVALID,                       MENU_FOX_FOUND     }, // fox-found announcement mode
+};
+
+const uint8_t gFoxMenuListCount = ARRAY_SIZE(gFoxMenuList);
+uint8_t       gFoxMenuCursor;
+bool          gInFoxMenu;
+#endif
 
 const char gSubMenu_TXP[][5] =
 {
@@ -372,6 +407,10 @@ const uint8_t gSubMenu_SIDEFUNCTIONS_size = ARRAY_SIZE(gSubMenu_SIDEFUNCTIONS);
 bool    gIsInSubMenu;
 uint8_t gMenuCursor;
 int UI_MENU_GetCurrentMenuId() {
+#ifdef ENABLE_FOXHUNT_TX
+	if (gInFoxMenu)
+		return gFoxMenuList[(gFoxMenuCursor < gFoxMenuListCount) ? gFoxMenuCursor : 0].menu_id;
+#endif
 	if(gMenuCursor < ARRAY_SIZE(MenuList))
 		return MenuList[gMenuCursor].menu_id;
 
@@ -389,8 +428,14 @@ uint8_t UI_MENU_GetMenuIdx(uint8_t id)
 int32_t gSubMenuSelection;
 
 // edit box
-char    edit_original[17]; // a copy of the text before editing so that we can easily test for changes/difference
-char    edit[17];
+#ifdef ENABLE_FOXHUNT_TX
+	// big enough for the 23 character fox message (channel names use 10)
+	char edit_original[25]; // a copy of the text before editing so that we can easily test for changes/difference
+	char edit[25];
+#else
+	char edit_original[17]; // a copy of the text before editing so that we can easily test for changes/difference
+	char edit[17];
+#endif
 int     edit_index;
 
 void UI_DisplayMenu(void)
@@ -405,14 +450,25 @@ void UI_DisplayMenu(void)
 	char               Contact[16];
 #endif
 
+	// when the fox sub menu is open the list pane shows the fox items instead
+#ifdef ENABLE_FOXHUNT_TX
+	const t_menu_item *pMenuList = gInFoxMenu ? gFoxMenuList      : MenuList;
+	const unsigned int menuCount = gInFoxMenu ? gFoxMenuListCount : gMenuListCount;
+	const unsigned int menuCursor= gInFoxMenu ? gFoxMenuCursor    : gMenuCursor;
+#else
+	const t_menu_item *pMenuList = MenuList;
+	const unsigned int menuCount = gMenuListCount;
+	const unsigned int menuCursor= gMenuCursor;
+#endif
+
 	UI_DisplayClear();
 
 #ifndef ENABLE_CUSTOM_MENU_LAYOUT
 		// original menu layout
 	for (i = 0; i < 3; i++)
-		if (gMenuCursor > 0 || i > 0)
-			if ((gMenuListCount - 1) != gMenuCursor || i != 2)
-				UI_PrintString(MenuList[gMenuCursor + i - 1].name, 0, 0, i * 2, 8);
+		if (menuCursor > 0 || i > 0)
+			if ((menuCount - 1) != menuCursor || i != 2)
+				UI_PrintString(pMenuList[menuCursor + i - 1].name, 0, 0, i * 2, 8);
 
 	// invert the current menu list item pixels
 	for (i = 0; i < (8 * menu_list_width); i++)
@@ -430,13 +486,13 @@ void UI_DisplayMenu(void)
 		memcpy(gFrameBuffer[0] + (8 * menu_list_width) + 1, BITMAP_CurrentIndicator, sizeof(BITMAP_CurrentIndicator));
 
 	// draw the menu index number/count
-	sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+	sprintf(String, "%2u.%u", 1 + menuCursor, menuCount);
 
 	UI_PrintStringSmallNormal(String, 2, 0, 6);
 
 #else
 	{	// new menu layout .. experimental & unfinished
-		const int menu_index = gMenuCursor;  // current selected menu item
+		const int menu_index = menuCursor;  // current selected menu item
 		i = 1;
 
 		if (!gIsInSubMenu) {
@@ -444,35 +500,35 @@ void UI_DisplayMenu(void)
 			{	// leading menu items - small text
 				const int k = menu_index + i - 2;
 				if (k < 0)
-					UI_PrintStringSmallNormal(MenuList[gMenuListCount + k].name, 0, 0, i);  // wrap-a-round
-				else if (k >= 0 && k < (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[k].name, 0, 0, i);
+					UI_PrintStringSmallNormal(pMenuList[menuCount + k].name, 0, 0, i);  // wrap-a-round
+				else if (k >= 0 && k < (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[k].name, 0, 0, i);
 				i++;
 			}
 
 			// current menu item - keep big n fat
-			if (menu_index >= 0 && menu_index < (int)gMenuListCount)
-				UI_PrintString(MenuList[menu_index].name, 0, 0, 2, 8);
+			if (menu_index >= 0 && menu_index < (int)menuCount)
+				UI_PrintString(pMenuList[menu_index].name, 0, 0, 2, 8);
 			i++;
 
 			while (i < 4)
 			{	// trailing menu item - small text
 				const int k = menu_index + i - 2;
-				if (k >= 0 && k < (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[k].name, 0, 0, 1 + i);
-				else if (k >= (int)gMenuListCount)
-					UI_PrintStringSmallNormal(MenuList[gMenuListCount - k].name, 0, 0, 1 + i);  // wrap-a-round
+				if (k >= 0 && k < (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[k].name, 0, 0, 1 + i);
+				else if (k >= (int)menuCount)
+					UI_PrintStringSmallNormal(pMenuList[menuCount - k].name, 0, 0, 1 + i);  // wrap-a-round
 				i++;
 			}
 
 			// draw the menu index number/count
-			sprintf(String, "%2u.%u", 1 + gMenuCursor, gMenuListCount);
+			sprintf(String, "%2u.%u", 1 + menuCursor, menuCount);
 			UI_PrintStringSmallNormal(String, 2, 0, 6);
 		}
-		else if (menu_index >= 0 && menu_index < (int)gMenuListCount)
+		else if (menu_index >= 0 && menu_index < (int)menuCount)
 		{	// current menu item
 //			strcat(String, ":");
-			UI_PrintString(MenuList[menu_index].name, 0, 0, 0, 8);
+			UI_PrintString(pMenuList[menu_index].name, 0, 0, 0, 8);
 //			UI_PrintStringSmallNormal(String, 0, 0, 0);
 		}
 	}
@@ -842,6 +898,153 @@ void UI_DisplayMenu(void)
 			strcpy(String, gSubMenu_SIDEFUNCTIONS[gSubMenuSelection].name);
 			break;
 
+#ifdef ENABLE_FOXHUNT_TX
+		case MENU_FOX_MENU:
+			strcpy(String, gEeprom.FOX.enabled ? "ON" : "OFF");
+			break;
+
+		case MENU_FOX_EN:
+		case MENU_FOX_RANDOM:
+			strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+			break;
+
+		case MENU_FOX_WPM:
+			sprintf(String, "%d WPM", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_PWR:
+			// 1..10 scale with the calibrated landmarks called out
+			if (gSubMenuSelection == 4)
+				sprintf(String, "%d of 10\n(LOW)", gSubMenuSelection);
+			else if (gSubMenuSelection == 7)
+				sprintf(String, "%d of 10\n(MID)", gSubMenuSelection);
+			else if (gSubMenuSelection == 10)
+				sprintf(String, "%d of 10\n(HIGH)", gSubMenuSelection);
+			else
+				sprintf(String, "%d of 10", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_PWR_VAR:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "OFF");
+			else
+				sprintf(String, "+/- %d", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_INTMIN:
+		case MENU_FOX_INTMAX:
+		case MENU_FOX_TONES:
+			sprintf(String, "%d sec", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_DELAY:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "OFF");
+			else
+				sprintf(String, "%d min", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_RUNTIME:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "OFF");
+			else
+				sprintf(String, "%d min", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_AUTO:
+		case MENU_FOX_RXOFF:
+			strcpy(String, gSubMenu_OFF_ON[gSubMenuSelection]);
+			break;
+
+		case MENU_FOX_DCS:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "OFF");
+			else if (gSubMenuSelection <= (int32_t)ARRAY_SIZE(DCS_Options))
+				sprintf(String, "D%03oN", DCS_Options[gSubMenuSelection - 1]);
+			else
+				sprintf(String, "D%03oI", DCS_Options[gSubMenuSelection - 1 - ARRAY_SIZE(DCS_Options)]);
+			break;
+
+		case MENU_FOX_PITCH:
+		case MENU_FOX_FND_TONE:
+			sprintf(String, "%d Hz", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_FND_RPT:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "CONT");
+			else
+				sprintf(String, "%d tx", gSubMenuSelection);
+			break;
+
+		case MENU_FOX_FREQ:
+			if (!gIsInSubMenu || gInputBoxIndex == 0)
+				sprintf(String, "%3d.%05d\nMHz", gSubMenuSelection / 100000, gSubMenuSelection % 100000);
+			else
+			{
+				const char *ascii = INPUTBOX_GetAscii();
+				sprintf(String, "%.3s.%.3s\nMHz", ascii, ascii + 3);
+			}
+			break;
+
+		case MENU_FOX_TONE:
+			if (gSubMenuSelection == 0)
+				strcpy(String, "OFF");
+			else
+				sprintf(String, "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10, CTCSS_Options[gSubMenuSelection - 1] % 10);
+			break;
+
+		case MENU_FOX_FOUND:
+			strcpy(String, gSubMenuSelection ? "YES" : "NO");
+			break;
+
+		case MENU_FOX_MSG:
+			// everything stays inside the value pane (menu_item_x1..x2) so the
+			// menu list on the left is never drawn over
+			if (!gIsInSubMenu || edit_index < 0)
+			{	// browsing - show the stored message, small font, wrapped
+				const unsigned int cpl = 11;   // small chars that fit the pane
+				const unsigned int len = strlen(gEeprom.FOX.message);
+				char line[12];
+
+				if (len == 0)
+					UI_PrintStringSmallNormal("--", menu_item_x1, 0, 2);
+
+				for (i = 0; i < 3 && (i * cpl) < len; i++)
+				{
+					memset(line, 0, sizeof(line));
+					strncpy(line, gEeprom.FOX.message + (i * cpl), cpl);
+					UI_PrintStringSmallNormal(line, menu_item_x1, 0, 1 + i);
+				}
+			}
+			else if (!gAskForConfirmation)
+			{	// editing - big font, 9 characters per line, cursor block inverted
+				const unsigned int cpl = 9;
+				char line[10];
+
+				for (i = 0; i < 3; i++)
+				{
+					memset(line, 0, sizeof(line));
+					strncpy(line, edit + (i * cpl), cpl);
+					UI_PrintString(line, menu_item_x1, 0, i * 2, 8);
+				}
+
+				if (edit_index >= 0 && edit_index < (int)(3 * cpl))
+				{	// invert the full cell of the character being edited
+					const unsigned int row = ((unsigned int)edit_index / cpl) * 2;
+					const unsigned int col = menu_item_x1 + (((unsigned int)edit_index % cpl) * 8);
+					for (i = 0; i < 8 && (col + i) < LCD_WIDTH; i++)
+					{
+						gFrameBuffer[row][col + i]     ^= 0xFF;
+						gFrameBuffer[row + 1][col + i] ^= 0xFF;
+					}
+				}
+			}
+			// while SURE?/WAIT! is being asked only the prompt is shown
+
+			already_printed = true;
+			break;
+#endif
 	}
 
 	if (!already_printed)
@@ -961,6 +1164,9 @@ void UI_DisplayMenu(void)
 	if ((UI_MENU_GetCurrentMenuId() == MENU_RESET    ||
 	     UI_MENU_GetCurrentMenuId() == MENU_MEM_CH   ||
 	     UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME ||
+#ifdef ENABLE_FOXHUNT_TX
+	     UI_MENU_GetCurrentMenuId() == MENU_FOX_MSG  ||
+#endif
 	     UI_MENU_GetCurrentMenuId() == MENU_DEL_CH) && gAskForConfirmation)
 	{	// display confirmation
 		char *pPrintStr = (gAskForConfirmation == 1) ? "SURE?" : "WAIT!";

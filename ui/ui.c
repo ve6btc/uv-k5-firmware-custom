@@ -88,6 +88,12 @@ void GUI_SelectNextDisplay(GUI_DisplayType_t Display)
 		gAskToSave           = false;
 		gAskToDelete         = false;
 		gWasFKeyPressed      = false;
+		#ifdef ENABLE_FOXHUNT_TX
+			// don't leave the fox sub menu (or a message edit) half-open when
+			// the menu closes via timeout, PTT or a side-key action
+			gInFoxMenu       = false;
+			edit_index       = -1;
+		#endif
 
 		gUpdateStatus        = true;
 	}

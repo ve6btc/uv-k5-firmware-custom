@@ -124,10 +124,43 @@ enum
 	MENU_F2LONG,
 	MENU_MLONG,
 	MENU_BATTYP
+#ifdef ENABLE_FOXHUNT_TX
+	,MENU_FOX_MENU    // "FoxHnt" entry in the main menu - opens the fox sub menu
+	,MENU_FOX_EN
+	,MENU_FOX_FREQ
+	,MENU_FOX_MSG
+	,MENU_FOX_WPM
+	,MENU_FOX_PWR
+	,MENU_FOX_PWR_VAR
+	,MENU_FOX_TONES
+	,MENU_FOX_INTMIN
+	,MENU_FOX_INTMAX
+	,MENU_FOX_RANDOM
+	,MENU_FOX_DELAY
+	,MENU_FOX_RUNTIME
+	,MENU_FOX_AUTO
+	,MENU_FOX_RXOFF
+	,MENU_FOX_PITCH
+	,MENU_FOX_TONE
+	,MENU_FOX_DCS
+	,MENU_FOX_FND_TONE
+	,MENU_FOX_FND_RPT
+	,MENU_FOX_FOUND
+#endif
 };
 
 extern const uint8_t FIRST_HIDDEN_MENU_ITEM;
 extern const t_menu_item MenuList[];
+
+#ifdef ENABLE_FOXHUNT_TX
+	// the fox settings live in their own list, shown when gInFoxMenu is set.
+	// keeping them out of MenuList means the normal menu navigation,
+	// digit-jump and item counting code never has to know about them.
+	extern const t_menu_item gFoxMenuList[];
+	extern const uint8_t     gFoxMenuListCount;
+	extern uint8_t           gFoxMenuCursor;
+	extern bool              gInFoxMenu;
+#endif
 
 extern const char        gSubMenu_TXP[3][5];
 extern const char        gSubMenu_SFT_D[3][4];
@@ -169,8 +202,14 @@ extern uint8_t           gMenuCursor;
 
 extern int32_t           gSubMenuSelection;
 				         
-extern char              edit_original[17];
-extern char              edit[17];
+#ifdef ENABLE_FOXHUNT_TX
+	// big enough for the 23 character fox message (channel names use 10)
+	extern char          edit_original[25];
+	extern char          edit[25];
+#else
+	extern char          edit_original[17];
+	extern char          edit[17];
+#endif
 extern int               edit_index;
 
 void UI_DisplayMenu(void);

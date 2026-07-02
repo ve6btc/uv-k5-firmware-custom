@@ -34,6 +34,9 @@
 #include "functions.h"
 #include "misc.h"
 #include "settings.h"
+#ifdef ENABLE_FOXHUNT_TX
+#include "app/fox.h"
+#endif
 #include "ui/inputbox.h"
 #include "ui/ui.h"
 
@@ -62,6 +65,16 @@ void GENERIC_Key_F(bool bKeyPressed, bool bKeyHeld)
 #else
 			if (gScreenToDisplay != DISPLAY_MAIN)
 				return;
+#endif
+
+#ifdef ENABLE_FOXHUNT_TX
+			if (FOX_IsEnabled()) {
+				// F toggles "fox found" - the beacon keeps running but
+				// announces "FOUND <message>" so hunters know it's over
+				FOX_ToggleFound();
+				gWasFKeyPressed = false;
+				return;
+			}
 #endif
 
 			gWasFKeyPressed = !gWasFKeyPressed; // toggle F function
